@@ -40,9 +40,30 @@ public class AL extends javax.swing.JFrame {
     }
     
     private void startProcess(){}
-        
+    
+    //Function to identify the type of the token received
     private ArrayList<String> tokenFilter(String token){
         ArrayList<String> result = new ArrayList<>();
+        
+        int i=0;
+        boolean numberFlag = true;;
+        
+        String numberType = "";
+        String type = "1";
+        
+        if(token.charAt(0)=='"' && token.charAt(token.length()-1)=='"'){result.add("Cadena ".concat(token)); result.add("3"); return result;}
+        
+        // This while loop identifies numbers
+        while(numberFlag || i==token.length()){ 
+            switch(token.charAt(i)){
+                case '0', '1', '2', '3', '4', '5', '6', '7', '9' -> {}
+                case '.' -> numberType.concat(" Real"); type = "2";}
+                default -> {numberFlag = false;}
+            }
+            i++;
+        }
+        
+        if(numberFlag){result.add("Numero ".concat(token)); result.add(type); return result;}
         
         switch(token){
             
@@ -66,6 +87,8 @@ public class AL extends javax.swing.JFrame {
             case "return" -> {result.add("Palabra reservada return"); result.add("21");}
             case "else" -> {result.add("Palabra reservada else"); result.add("22");}
             case "$" -> {result.add("Palabra reservada $"); result.add("23");}
+            case "." -> {result.add("Operador ."); result.add("24");}
+            default -> {result.add("Identidifador ".concat(token)); result.add("0");}
         }
         
         return result;
