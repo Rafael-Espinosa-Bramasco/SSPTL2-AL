@@ -18,10 +18,12 @@ public class AL extends javax.swing.JFrame {
     public AL() {
         initComponents();
         this.input = new ArrayList<>();
+        this.tokenArray = new ArrayList<>();
     }
     
     // Variables
     ArrayList<Character> input;
+    ArrayList<String> tokenArray;
     
     // Functions
     private ArrayList<String> tokenFilter(String token){
