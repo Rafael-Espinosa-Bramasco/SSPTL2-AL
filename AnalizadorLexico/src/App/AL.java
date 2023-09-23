@@ -5,6 +5,7 @@
 package App;
 
 import java.util.ArrayList;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -18,12 +19,28 @@ public class AL extends javax.swing.JFrame {
     public AL() {
         initComponents();
         this.input = new ArrayList<>();
+        this.tokenArray = new ArrayList<>();
+        
+        this.tableModel = (DefaultTableModel) this.tokensTable.getModel();
     }
     
     // Variables
-    ArrayList<Character> input;
+        // Arrays
+        ArrayList<Character> input;
+        ArrayList<String> tokenArray;
+    
+        // Table Model
+        DefaultTableModel tableModel;
     
     // Functions
+    private void addToTable(String token){
+        ArrayList<String> tokenData = this.tokenFilter(token);
+        
+        this.tableModel.addRow(new Object[]{token, tokenData.get(0), tokenData.get(1)});
+    }
+    
+    private void startProcess(){}
+        
     private ArrayList<String> tokenFilter(String token){
         ArrayList<String> result = new ArrayList<>();
         
@@ -81,13 +98,9 @@ public class AL extends javax.swing.JFrame {
 
         tokensTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
             },
             new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+                "Lexema", "Token", "ID"
             }
         ));
         jScrollPane2.setViewportView(tokensTable);
