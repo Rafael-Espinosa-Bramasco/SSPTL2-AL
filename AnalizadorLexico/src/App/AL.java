@@ -45,8 +45,27 @@ public class AL extends javax.swing.JFrame {
         ArrayList<String> result = new ArrayList<>();
         
         switch(token){
-            case "(" -> {result.add("Parentesis de Apertura"); result.add("1");}
-            case ")" -> {result.add("Parentesis de Cierre"); result.add("1");}
+            
+            case "int", "void", "float", "string" -> {result.add("Palabra reservada ".concat(token)); result.add("4");}
+            case "+", "-" -> {result.add("Operador suma"); result.add("5");}
+            case "*", "/" -> {result.add("Operador de Multiplicacion"); result.add("6");}
+            case "<", "<=", ">", ">=" -> {result.add("Operador Relacional"); result.add("7");}
+            case "||" -> {result.add("Operador Or"); result.add("8");}
+            case "&&" -> {result.add("Operador And"); result.add("9");}
+            case "!" -> {result.add("Operador Not"); result.add("10");}
+            case "==" -> {result.add("Operador Igualdad"); result.add("11");}
+            case ";" -> {result.add("Punto y coma"); result.add("12");}
+            case "," -> {result.add("Coma"); result.add("13");}
+            case "(" -> {result.add("Parentesis de Apertura"); result.add("14");}
+            case ")" -> {result.add("Parentesis de Cierre"); result.add("15");}
+            case "{" -> {result.add("Llave de Apertura"); result.add("16");}
+            case "}" -> {result.add("Llave de Cierre"); result.add("17");}
+            case "=" -> {result.add("Signo de Asignacion"); result.add("18");}
+            case "if" -> {result.add("Palabra reservada if"); result.add("19");}
+            case "while" -> {result.add("Palabra reservada if"); result.add("20");}
+            case "return" -> {result.add("Palabra reservada if"); result.add("21");}
+            case "else" -> {result.add("Palabra reservada if"); result.add("22");}
+            case "$" -> {result.add("Palabra reservada $"); result.add("23");}
         }
         
         return result;
