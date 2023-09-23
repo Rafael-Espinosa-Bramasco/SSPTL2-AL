@@ -4,6 +4,8 @@
  */
 package App;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author rafael
@@ -15,7 +17,11 @@ public class AL extends javax.swing.JFrame {
      */
     public AL() {
         initComponents();
+        this.input = new ArrayList<>();
     }
+    
+    // Variables
+    ArrayList<Character> input;
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -56,6 +62,11 @@ public class AL extends javax.swing.JFrame {
         jScrollPane2.setViewportView(tokensTable);
 
         analizeBTN.setText("Analizar");
+        analizeBTN.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                analizeBTNActionPerformed(evt);
+            }
+        });
 
         jLabel1.setText("Código");
 
@@ -108,6 +119,17 @@ public class AL extends javax.swing.JFrame {
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
+
+    private void analizeBTNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analizeBTNActionPerformed
+        // TODO add your handling code here:
+        String text = this.inputCode.getText();
+        
+        for(int i = 0; i < text.length() ; i++){
+            this.input.add(text.charAt(i));
+        }
+        
+        
+    }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
      * @param args the command line arguments
