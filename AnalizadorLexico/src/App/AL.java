@@ -22,6 +22,18 @@ public class AL extends javax.swing.JFrame {
     
     // Variables
     ArrayList<Character> input;
+    
+    // Functions
+    private ArrayList<String> tokenFilter(String token){
+        ArrayList<String> result = new ArrayList<>();
+        
+        switch(token){
+            case "(" -> {result.add("Parentesis de Apertura"); result.add("1");}
+            case ")" -> {result.add("Parentesis de Cierre"); result.add("1");}
+        }
+        
+        return result;
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
