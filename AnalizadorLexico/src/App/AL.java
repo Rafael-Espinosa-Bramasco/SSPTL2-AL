@@ -39,7 +39,68 @@ public class AL extends javax.swing.JFrame {
         this.tableModel.addRow(new Object[]{token, tokenData.get(0), tokenData.get(1)});
     }
     
-    private void startProcess(){}
+    private void startProcess(){
+        String newToken = new String();
+        
+        while(!this.input.isEmpty()){
+            if(this.input.get(0) == '('){
+                this.input.remove(0);
+                if(newToken.length() > 0){
+                    this.tokenArray.add(newToken);
+                    newToken = new String();
+                }
+                this.tokenArray.add("(");
+            }
+            else if(this.input.get(0) == ')'){
+                this.input.remove(0);
+                if(newToken.length() > 0){
+                    this.tokenArray.add(newToken);
+                    newToken = new String();
+                }
+                this.tokenArray.add(")");
+            }
+            else if(this.input.get(0) == '{'){
+                this.input.remove(0);
+                if(newToken.length() > 0){
+                    this.tokenArray.add(newToken);
+                    newToken = new String();
+                }
+                this.tokenArray.add("{");
+            }
+            else if(this.input.get(0) == '}'){
+                this.input.remove(0);
+                if(newToken.length() > 0){
+                    this.tokenArray.add(newToken);
+                    newToken = new String();
+                }
+                this.tokenArray.add("}");
+            }
+            else if(this.input.get(0) == '.'){
+                this.input.remove(0);
+                if(newToken.length() > 0){
+                    this.tokenArray.add(newToken);
+                    newToken = new String();
+                }
+                this.tokenArray.add(".");
+            }
+            else if(!(this.input.get(0) == ' ' || this.input.get(0) == ';' || this.input.get(0) == '\n' || this.input.get(0) == '\t')){
+                newToken += this.input.get(0);
+                this.input.remove(0);
+                
+                switch(newToken){
+                    case "<=", ">=", "<", ">", "==", "!=" -> {this.tokenArray.add(newToken); newToken = new String();}
+                    default -> {}
+                }
+            }
+            else{
+                this.input.remove(0);
+                if(newToken.length() > 0){
+                    this.tokenArray.add(newToken);
+                    newToken = new String();
+                }
+            }
+        }
+    }
         
     private ArrayList<String> tokenFilter(String token){
         ArrayList<String> result = new ArrayList<>();
