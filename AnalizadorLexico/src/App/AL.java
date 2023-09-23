@@ -45,9 +45,9 @@ public class AL extends javax.swing.JFrame {
             case "}" -> {result.add("Llave de Cierre"); result.add("17");}
             case "=" -> {result.add("Signo de Asignacion"); result.add("18");}
             case "if" -> {result.add("Palabra reservada if"); result.add("19");}
-            case "while" -> {result.add("Palabra reservada if"); result.add("20");}
-            case "return" -> {result.add("Palabra reservada if"); result.add("21");}
-            case "else" -> {result.add("Palabra reservada if"); result.add("22");}
+            case "while" -> {result.add("Palabra reservada while"); result.add("20");}
+            case "return" -> {result.add("Palabra reservada return"); result.add("21");}
+            case "else" -> {result.add("Palabra reservada else"); result.add("22");}
             case "$" -> {result.add("Palabra reservada $"); result.add("23");}
         }
         
