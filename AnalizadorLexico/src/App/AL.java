@@ -38,6 +38,8 @@ public class AL extends javax.swing.JFrame {
         
         this.tableModel.addRow(new Object[]{token, tokenData.get(0), tokenData.get(1)});
     }
+    
+    private void startProcess(){}
         
     private ArrayList<String> tokenFilter(String token){
         ArrayList<String> result = new ArrayList<>();
