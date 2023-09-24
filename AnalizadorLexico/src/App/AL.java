@@ -24,9 +24,14 @@ public class AL extends javax.swing.JFrame {
         this.tableModel = (DefaultTableModel) this.tokensTable.getModel();
         
         this.newToken = new String();
+        
+        this.isFilled = false;
     }
     
     // Variables
+        // Booleans
+        boolean isFilled;
+    
         // Strings
         String newToken;
     
@@ -72,7 +77,7 @@ public class AL extends javax.swing.JFrame {
     private boolean isOperator(char c){
         switch(c){
             case ',', '.', '+', '-', '*', '/', '%' -> {return true;}
-            case '[', ']', '(', ')', '<', '>', '=', '!', '&', '|' -> {return true;}
+            case '{', '}', '[', ']', '(', ')', '<', '>', '=', '!', '&', '|' -> {return true;}
             default -> {return false;}
         }
     }
@@ -91,8 +96,21 @@ public class AL extends javax.swing.JFrame {
     private boolean isString(char c){
         return c == '"';
     }
+    
+    private void clearComments(){
+        for(int i = 0; i < this.input.size() ; i++){
+            char x = this.input.get(i);
+            if(!this.input.isEmpty() && this.input.get(i) == '/' && (this.input.size() - 1 >= i + 1) && this.input.get(i + 1) == '/'){
+                while(!this.input.isEmpty() && this.input.get(i) != '\n'){
+                    this.input.remove(i);
+                }
+            }
+        }
+    }
 
     private void startP(){
+        this.clearComments();
+        
         while(!this.input.isEmpty()){
             
             char act = this.input.get(0);
@@ -128,11 +146,11 @@ public class AL extends javax.swing.JFrame {
         this.input.remove(0);
         
         while(!this.input.isEmpty() && this.input.get(0) != '"'){
-            this.newToken += '"';
+            this.newToken += this.input.get(0);
             this.input.remove(0);
         }
         
-        if(this.input.get(0) != '"'){
+        if(!this.input.isEmpty() && this.input.get(0) == '"'){
             this.newToken += '"';
             this.input.remove(0);
         }
@@ -196,8 +214,8 @@ public class AL extends javax.swing.JFrame {
                 this.newToken = new String();
             }
         }
-        else if(this.input.get(0) == '>'){
-            this.newToken += '>';
+        else if(this.input.get(0) == '!'){
+            this.newToken += '!';
             this.input.remove(0);
             
             if(!this.input.isEmpty() && this.input.get(0) == '='){
@@ -216,6 +234,48 @@ public class AL extends javax.swing.JFrame {
             
             if(!this.input.isEmpty() && this.input.get(0) == '&'){
                 this.newToken += '&';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '>'){
+            this.newToken += '>';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '>'){
+            this.newToken += '>';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '='){
+            this.newToken += '=';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
                 this.input.remove(0);
                 this.tokenArray.add(newToken);
                 this.newToken = new String();
@@ -276,12 +336,12 @@ public class AL extends javax.swing.JFrame {
         this.newToken += this.input.get(0);
         this.input.remove(0);
         
-        while(!this.input.isEmpty() && !this.isSpace(this.input.get(0)) && !this.isOperator(this.input.get(0))){
+        while(!this.input.isEmpty() && !this.isSpace(this.input.get(0)) && !this.isOperator(this.input.get(0)) && !this.isIgnorable(this.input.get(0))){
             this.newToken += this.input.get(0);
             this.input.remove(0);
         }
         
-        if(this.isSpace(this.input.get(0))){
+        if(!this.input.isEmpty() && this.isSpace(this.input.get(0))){
             this.input.remove(0);
         }
         
@@ -298,7 +358,7 @@ public class AL extends javax.swing.JFrame {
         int i=0;
         boolean numberFlag = true;
         
-        String numberType = "Numero";
+        String numberType = "Numero ";
         String type = "1"; //asuming its a number
         
         if(token.charAt(0)=='"' || token.charAt(token.length()-1)=='"'){result.add("Cadena ".concat(token)); result.add("3"); return result;}
@@ -308,7 +368,7 @@ public class AL extends javax.swing.JFrame {
         while(numberFlag && i<token.length()){ 
             switch(token.charAt(i)){
                 case '0', '1', '2', '3', '4', '5', '6', '7', '9' -> {}
-                case '.' -> {numberType.concat(" Real"); type = "2";}
+                case '.' -> {numberType = numberType.concat("Real "); type = "2";}
                 default -> {numberFlag = false;}
             }
             i++;
@@ -324,14 +384,14 @@ public class AL extends javax.swing.JFrame {
         
         switch(token){
             
-            case "int", "void", "float", "string" -> {result.add("Palabra reservada ".concat(token)); result.add("4");}
+            case "int", "void", "float", "string", "char" -> {result.add("Palabra reservada ".concat(token)); result.add("4");}
             case "+", "-" -> {result.add("Operador suma"); result.add("5");}
             case "*", "/" -> {result.add("Operador de Multiplicacion"); result.add("6");}
             case "<", "<=", ">", ">=" -> {result.add("Operador Relacional"); result.add("7");}
-            case "||" -> {result.add("Operador Or"); result.add("8");}
-            case "&&" -> {result.add("Operador And"); result.add("9");}
+            case "||", "|" -> {result.add("Operador Or"); result.add("8");}
+            case "&&", "&" -> {result.add("Operador And"); result.add("9");}
             case "!" -> {result.add("Operador Not"); result.add("10");}
-            case "==" -> {result.add("Operador Igualdad"); result.add("11");}
+            case "==", "!=" -> {result.add("Operador Igualdad"); result.add("11");}
             case ";" -> {result.add("Punto y coma"); result.add("12");}
             case "," -> {result.add("Coma"); result.add("13");}
             case "(" -> {result.add("Parentesis de Apertura"); result.add("14");}
@@ -456,7 +516,16 @@ public class AL extends javax.swing.JFrame {
             this.input.add(text.charAt(i));
         }
         
+        if(isFilled){
+            // delete table
+            while(this.tableModel.getRowCount() > 0){
+                this.tableModel.removeRow(0);
+            }
+        }
+        
         this.startP();
+        
+        this.isFilled = true;
     }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
