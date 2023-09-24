@@ -22,9 +22,14 @@ public class AL extends javax.swing.JFrame {
         this.tokenArray = new ArrayList<>();
         
         this.tableModel = (DefaultTableModel) this.tokensTable.getModel();
+        
+        this.newToken = new String();
     }
     
     // Variables
+        // Strings
+        String newToken;
+    
         // Arrays
         ArrayList<Character> input;
         ArrayList<String> tokenArray;
@@ -38,67 +43,251 @@ public class AL extends javax.swing.JFrame {
         
         this.tableModel.addRow(new Object[]{token, tokenData.get(0), tokenData.get(1)});
     }
+    
+    private boolean isIdentifier(char c){
+        switch(Character.toLowerCase(c)){
+            case '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'ñ', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' -> {return true;}
+            default -> {return false;}
+        }
+    }
+    
+    private boolean isAlpha(char c){
+        switch(Character.toLowerCase(c)){
+            case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'ñ', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' -> {return true;}
+            default -> {return false;}
+        }
+    }
+    
+    private boolean isPreprocessor(char c){
+        return c == '#';
+    }
+    
+    private boolean isNumeric(char c){
+        switch(c){
+            case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {return true;}
+            default -> {return false;}
+        }
+    }
+    
+    private boolean isOperator(char c){
+        switch(c){
+            case ',', '.', '+', '-', '*', '/', '%' -> {return true;}
+            case '[', ']', '(', ')', '<', '>', '=', '!', '&', '|' -> {return true;}
+            default -> {return false;}
+        }
+    }
+    
+    private boolean isIgnorable(char c){
+        switch(c){
+            case ' ', '\n', '\t', ';' -> {return true;}
+            default -> {return false;}
+        }
+    }
+    
+    private boolean isSpace(char c){
+        return c == ' ';
+    }
+    
+    private boolean isString(char c){
+        return c == '"';
+    }
 
-    private void startProcess(){
-        String newToken = new String();
-        
+    private void startP(){
         while(!this.input.isEmpty()){
-            if(this.input.get(0) == '('){
-                this.input.remove(0);
-                if(newToken.length() > 0){
-                    this.tokenArray.add(newToken);
-                    newToken = new String();
-                }
-                this.tokenArray.add("(");
+            
+            char act = this.input.get(0);
+            
+            if(this.isIdentifier(act)){
+                this.pI();
             }
-            else if(this.input.get(0) == ')'){
-                this.input.remove(0);
-                if(newToken.length() > 0){
-                    this.tokenArray.add(newToken);
-                    newToken = new String();
-                }
-                this.tokenArray.add(")");
+            else if(this.isOperator(act)){
+                this.pO();
             }
-            else if(this.input.get(0) == '{'){
-                this.input.remove(0);
-                if(newToken.length() > 0){
-                    this.tokenArray.add(newToken);
-                    newToken = new String();
-                }
-                this.tokenArray.add("{");
+            else if(this.isPreprocessor(act)){
+                this.pP();
             }
-            else if(this.input.get(0) == '}'){
-                this.input.remove(0);
-                if(newToken.length() > 0){
-                    this.tokenArray.add(newToken);
-                    newToken = new String();
-                }
-                this.tokenArray.add("}");
+            else if(this.isNumeric(act)){
+                this.pN();
             }
-            else if(this.input.get(0) == '.'){
-                this.input.remove(0);
-                if(newToken.length() > 0){
-                    this.tokenArray.add(newToken);
-                    newToken = new String();
-                }
-                this.tokenArray.add(".");
+            else if(this.isString(act)){
+                this.pS();
             }
-            else if(!(this.input.get(0) == ' ' || this.input.get(0) == ';' || this.input.get(0) == '\n' || this.input.get(0) == '\t')){
-                newToken += this.input.get(0);
+            else if(this.isIgnorable(act)){
                 this.input.remove(0);
-                
-                switch(newToken){
-                    case "<=", ">=", "<", ">", "==", "!=" -> {this.tokenArray.add(newToken); newToken = new String();}
-                    default -> {}
-                }
             }
-            else{
+        }
+        
+        while(!this.tokenArray.isEmpty()){
+            this.addToTable(this.tokenArray.get(0));
+            this.tokenArray.remove(0);
+        }
+    }
+    
+    private void pS(){
+        this.newToken += '"';
+        this.input.remove(0);
+        
+        while(!this.input.isEmpty() && this.input.get(0) != '"'){
+            this.newToken += '"';
+            this.input.remove(0);
+        }
+        
+        if(this.input.get(0) != '"'){
+            this.newToken += '"';
+            this.input.remove(0);
+        }
+        
+        this.tokenArray.add(newToken);
+        this.newToken = new String();
+    }
+    
+    private void pN(){
+        
+        this.newToken += this.input.get(0);
+        this.input.remove(0);
+        
+        while(!this.input.isEmpty() && this.isNumeric(this.input.get(0))){
+            this.newToken += this.input.get(0);
+            this.input.remove(0);
+        }
+        
+        if(this.input.get(0) == '.'){
+            this.newToken += '.';
+            this.input.remove(0);
+            
+            while(!this.input.isEmpty() && this.isNumeric(this.input.get(0))){
+                this.newToken += this.input.get(0);
                 this.input.remove(0);
-                if(newToken.length() > 0){
-                    this.tokenArray.add(newToken);
-                    newToken = new String();
-                }
             }
+        }
+        
+        this.tokenArray.add(newToken);
+        this.newToken = new String();
+    }
+    
+    private void pP(){
+        this.input.remove(0);
+        this.newToken += '#';
+        
+        while(!this.input.isEmpty() && this.isAlpha(this.input.get(0))){
+            this.newToken += this.input.get(0);
+            this.input.remove(0);
+        }
+        
+        if(this.newToken.length() > 0){
+            this.tokenArray.add(newToken);
+            this.newToken = new String();
+        }
+    }
+    
+    private void pO(){
+        
+        if(this.input.get(0) == '<'){
+            this.newToken += '<';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '>'){
+            this.newToken += '>';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '&'){
+            this.newToken += '&';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '&'){
+                this.newToken += '&';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '.'){
+            this.tokenArray.add(".");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == '{'){
+            this.tokenArray.add("{");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == '}'){
+            this.tokenArray.add("}");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == '('){
+            this.tokenArray.add("(");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == ')'){
+            this.tokenArray.add(")");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == '['){
+            this.tokenArray.add("[");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == ']'){
+            this.tokenArray.add("]");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == ','){
+            this.tokenArray.add(",");
+            this.input.remove(0);
+        }
+        else if(this.input.get(0) == '*'){
+            this.newToken += '*';
+            this.input.remove(0);
+            
+            while(this.input.get(0) == '*'){
+                this.newToken += '*';
+                this.input.remove(0);
+            }
+            
+            if(this.newToken.length() > 0){
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+    }
+    
+    private void pI(){
+        this.newToken += this.input.get(0);
+        this.input.remove(0);
+        
+        while(!this.input.isEmpty() && !this.isSpace(this.input.get(0)) && !this.isOperator(this.input.get(0))){
+            this.newToken += this.input.get(0);
+            this.input.remove(0);
+        }
+        
+        if(this.isSpace(this.input.get(0))){
+            this.input.remove(0);
+        }
+        
+        if(this.newToken.length() > 0){
+            this.tokenArray.add(this.newToken);
+            this.newToken = new String();
         }
     }
 
@@ -107,15 +296,16 @@ public class AL extends javax.swing.JFrame {
         ArrayList<String> result = new ArrayList<>();
         
         int i=0;
-        boolean numberFlag = true;;
+        boolean numberFlag = true;
         
-        String numberType = "";
-        String type = "1";
+        String numberType = "Numero";
+        String type = "1"; //asuming its a number
         
-        if(token.charAt(0)=='"' && token.charAt(token.length()-1)=='"'){result.add("Cadena ".concat(token)); result.add("3"); return result;}
+        if(token.charAt(0)=='"' || token.charAt(token.length()-1)=='"'){result.add("Cadena ".concat(token)); result.add("3"); return result;}
         
+        if(token.charAt(0)=='.'){numberFlag = false;}
         // This while loop identifies numbers
-        while(numberFlag || i==token.length()){ 
+        while(numberFlag && i<token.length()){ 
             switch(token.charAt(i)){
                 case '0', '1', '2', '3', '4', '5', '6', '7', '9' -> {}
                 case '.' -> {numberType.concat(" Real"); type = "2";}
@@ -124,7 +314,13 @@ public class AL extends javax.swing.JFrame {
             i++;
         }
         
-        if(numberFlag){result.add("Numero ".concat(token)); result.add(type); return result;}
+        if(numberFlag){result.add(numberType.concat(token)); result.add(type); return result;}
+        
+        if(token.charAt(0) == '#'){
+            result.add("Directiva del Preprocesador");
+            result.add("29");
+            return result;
+        }
         
         switch(token){
             
@@ -142,14 +338,18 @@ public class AL extends javax.swing.JFrame {
             case ")" -> {result.add("Parentesis de Cierre"); result.add("15");}
             case "{" -> {result.add("Llave de Apertura"); result.add("16");}
             case "}" -> {result.add("Llave de Cierre"); result.add("17");}
+            case "[" -> {result.add("Parentesis cuadrado de apertura"); result.add("25");}
+            case "]" -> {result.add("Parentesis cuadrado de cierre"); result.add("26");}
             case "=" -> {result.add("Signo de Asignacion"); result.add("18");}
             case "if" -> {result.add("Palabra reservada if"); result.add("19");}
             case "while" -> {result.add("Palabra reservada while"); result.add("20");}
+            case "for" -> {result.add("Palabra reservada for"); result.add("27");}
+            case "do" -> {result.add("Palabra reservada do"); result.add("28");}
             case "return" -> {result.add("Palabra reservada return"); result.add("21");}
             case "else" -> {result.add("Palabra reservada else"); result.add("22");}
             case "$" -> {result.add("Palabra reservada $"); result.add("23");}
             case "." -> {result.add("Operador ."); result.add("24");}
-            default -> {result.add("Identidifador ".concat(token)); result.add("0");}
+            default -> {result.add("Identificador ".concat(token)); result.add("0");}
         }
         
         return result;
@@ -256,7 +456,7 @@ public class AL extends javax.swing.JFrame {
             this.input.add(text.charAt(i));
         }
         
-        
+        this.startP();
     }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
