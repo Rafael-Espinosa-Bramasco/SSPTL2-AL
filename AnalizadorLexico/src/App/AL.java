@@ -84,9 +84,13 @@ public class AL extends javax.swing.JFrame {
     
     private boolean isIgnorable(char c){
         switch(c){
-            case ' ', '\n', '\t', ';' -> {return true;}
+            case ' ', '\n', '\t' -> {return true;}
             default -> {return false;}
         }
+    }
+    
+    private boolean isSemiColon(char c){
+        return c == ';';
     }
     
     private boolean isSpace(char c){
@@ -132,6 +136,10 @@ public class AL extends javax.swing.JFrame {
             }
             else if(this.isIgnorable(act)){
                 this.input.remove(0);
+            }
+            else if(this.isSemiColon(act)){
+                this.input.remove(0);
+                this.tokenArray.add(";");
             }
         }
         
@@ -336,7 +344,7 @@ public class AL extends javax.swing.JFrame {
         this.newToken += this.input.get(0);
         this.input.remove(0);
         
-        while(!this.input.isEmpty() && !this.isSpace(this.input.get(0)) && !this.isOperator(this.input.get(0)) && !this.isIgnorable(this.input.get(0))){
+        while(!this.input.isEmpty() && !this.isSpace(this.input.get(0)) && !this.isOperator(this.input.get(0)) && !this.isSemiColon(this.input.get(0))){
             this.newToken += this.input.get(0);
             this.input.remove(0);
         }
