@@ -256,8 +256,8 @@ public class AL extends javax.swing.JFrame {
                 this.newToken = new String();
             }
         }
-        else if(this.input.get(0) == '>'){
-            this.newToken += '>';
+        else if(this.input.get(0) == '+'){
+            this.newToken += '+';
             this.input.remove(0);
             
             if(!this.input.isEmpty() && this.input.get(0) == '='){
@@ -265,7 +265,33 @@ public class AL extends javax.swing.JFrame {
                 this.input.remove(0);
                 this.tokenArray.add(newToken);
                 this.newToken = new String();
-            }else{
+            }else if (!this.input.isEmpty() && this.input.get(0) == '+'){
+                this.newToken += '+';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+            else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '-'){
+            this.newToken += '-';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else if (!this.input.isEmpty() && this.input.get(0) == '-'){
+                this.newToken += '-';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+            else{
                 this.tokenArray.add(newToken);
                 this.newToken = new String();
             }
@@ -316,16 +342,53 @@ public class AL extends javax.swing.JFrame {
             this.tokenArray.add(",");
             this.input.remove(0);
         }
+        else if(this.input.get(0) == '^'){
+            this.tokenArray.add("^");
+            this.input.remove(0);
+        }
         else if(this.input.get(0) == '*'){
             this.newToken += '*';
             this.input.remove(0);
             
-            while(this.input.get(0) == '*'){
-                this.newToken += '*';
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
                 this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
             }
+        }
+        else if(this.input.get(0) == '/'){
+            this.newToken += '/';
+            this.input.remove(0);
             
-            if(this.newToken.length() > 0){
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else if(!this.input.isEmpty() && this.input.get(0) == '/'){
+                this.newToken += '/';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }else{
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            }
+        }
+        else if(this.input.get(0) == '%'){
+            this.newToken += '%';
+            this.input.remove(0);
+            
+            if(!this.input.isEmpty() && this.input.get(0) == '='){
+                this.newToken += '=';
+                this.input.remove(0);
+                this.tokenArray.add(newToken);
+                this.newToken = new String();
+            } else{
                 this.tokenArray.add(newToken);
                 this.newToken = new String();
             }
@@ -361,14 +424,14 @@ public class AL extends javax.swing.JFrame {
         String numberType = "Numero ";
         String type = "1"; //asuming its a number
         
-        if(token.charAt(0)=='"' || token.charAt(token.length()-1)=='"'){result.add("Cadena ".concat(token)); result.add("3"); return result;}
+        if(token.charAt(0)=='"' || token.charAt(token.length()-1)=='"'){result.add("Cadena ".concat(token)); result.add("2"); return result;}
         
         if(token.charAt(0)=='.'){numberFlag = false;}
         // This while loop identifies numbers
         while(numberFlag && i<token.length()){ 
             switch(token.charAt(i)){
                 case '0', '1', '2', '3', '4', '5', '6', '7', '9' -> {}
-                case '.' -> {numberType = numberType.concat("Real "); type = "2";}
+                case '.' -> {numberType = numberType.concat("Real "); type = "3";}
                 default -> {numberFlag = false;}
             }
             i++;
@@ -378,38 +441,43 @@ public class AL extends javax.swing.JFrame {
         
         if(token.charAt(0) == '#'){
             result.add("Directiva del Preprocesador");
-            result.add("29");
+            result.add("4");
             return result;
         }
         
         switch(token){
             
-            case "int", "void", "float", "string", "char" -> {result.add("Palabra reservada ".concat(token)); result.add("4");}
-            case "+", "-" -> {result.add("Operador suma"); result.add("5");}
-            case "*", "/" -> {result.add("Operador de Multiplicacion"); result.add("6");}
-            case "<", "<=", ">", ">=" -> {result.add("Operador Relacional"); result.add("7");}
-            case "||", "|" -> {result.add("Operador Or"); result.add("8");}
-            case "&&", "&" -> {result.add("Operador And"); result.add("9");}
-            case "!" -> {result.add("Operador Not"); result.add("10");}
-            case "==", "!=" -> {result.add("Operador Igualdad"); result.add("11");}
-            case ";" -> {result.add("Punto y coma"); result.add("12");}
-            case "," -> {result.add("Coma"); result.add("13");}
-            case "(" -> {result.add("Parentesis de Apertura"); result.add("14");}
-            case ")" -> {result.add("Parentesis de Cierre"); result.add("15");}
-            case "{" -> {result.add("Llave de Apertura"); result.add("16");}
-            case "}" -> {result.add("Llave de Cierre"); result.add("17");}
-            case "[" -> {result.add("Parentesis cuadrado de apertura"); result.add("25");}
-            case "]" -> {result.add("Parentesis cuadrado de cierre"); result.add("26");}
-            case "=" -> {result.add("Signo de Asignacion"); result.add("18");}
-            case "if" -> {result.add("Palabra reservada if"); result.add("19");}
-            case "while" -> {result.add("Palabra reservada while"); result.add("20");}
-            case "for" -> {result.add("Palabra reservada for"); result.add("27");}
-            case "do" -> {result.add("Palabra reservada do"); result.add("28");}
-            case "return" -> {result.add("Palabra reservada return"); result.add("21");}
-            case "else" -> {result.add("Palabra reservada else"); result.add("22");}
-            case "$" -> {result.add("Palabra reservada $"); result.add("23");}
-            case "." -> {result.add("Operador ."); result.add("24");}
-            default -> {result.add("Identificador ".concat(token)); result.add("0");}
+            case "int", "void", "float", "string", "char" -> {result.add("Palabra reservada ".concat(token)); result.add("5");}
+            case "+", "-", "+=", "-=", "++", "--" -> {result.add("Operador suma"); result.add("6");}
+            case "*", "/", "*=", "/=" -> {result.add("Operador de Multiplicacion"); result.add("7");}
+            case "%", "%=" -> {result.add("Operador de Modulo"); result.add("8");}
+            case "//" -> {result.add("Operador de Division Entera"); result.add("9");}
+            case "^" -> {result.add("Operador de Potencia"); result.add("10");}
+            case "<", "<=", ">", ">=" -> {result.add("Operador Relacional"); result.add("11");}
+            case "||" -> {result.add("Operador Or"); result.add("12");}
+            case "|" -> {result.add("Operador sobre Bits Or"); result.add("13");}
+            case "&&" -> {result.add("Operador And"); result.add("14");}
+            case "&" -> {result.add("Operador sobre Bits And"); result.add("15");}
+            case "!" -> {result.add("Operador Not"); result.add("16");}
+            case "==", "!=" -> {result.add("Operador Igualdad"); result.add("17");}
+            case ";" -> {result.add("Punto y coma"); result.add("18");}
+            case "," -> {result.add("Coma"); result.add("19");}
+            case "(" -> {result.add("Parentesis de Apertura"); result.add("20");}
+            case ")" -> {result.add("Parentesis de Cierre"); result.add("21");}
+            case "{" -> {result.add("Llave de Apertura"); result.add("22");}
+            case "}" -> {result.add("Llave de Cierre"); result.add("23");}
+            case "[" -> {result.add("Parentesis cuadrado de apertura"); result.add("24");}
+            case "]" -> {result.add("Parentesis cuadrado de cierre"); result.add("25");}
+            case "=" -> {result.add("Signo de Asignacion"); result.add("26");}
+            case "if" -> {result.add("Palabra reservada if"); result.add("27");}
+            case "while" -> {result.add("Palabra reservada while"); result.add("28");}
+            case "for" -> {result.add("Palabra reservada for"); result.add("29");}
+            case "do" -> {result.add("Palabra reservada do"); result.add("30");}
+            case "return" -> {result.add("Palabra reservada return"); result.add("31");}
+            case "else" -> {result.add("Palabra reservada else"); result.add("32");}
+            case "$" -> {result.add("Palabra reservada $"); result.add("33");}
+            case "." -> {result.add("Operador ."); result.add("34");}
+            default -> {result.add("Identificador ".concat(token)); result.add("35");}
         }
         
         return result;
