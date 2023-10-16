@@ -468,24 +468,24 @@ public class AL extends javax.swing.JFrame {
             case "&" -> {result.add("Operador sobre Bits And"); result.add("15");}
             case "!" -> {result.add("Operador Not"); result.add("16");}
             case "==", "!=" -> {result.add("Operador Igualdad"); result.add("17");}
-            case ";" -> {result.add("Punto y coma"); result.add("18");}
-            case "," -> {result.add("Coma"); result.add("19");}
-            case "(" -> {result.add("Parentesis de Apertura"); result.add("20");}
-            case ")" -> {result.add("Parentesis de Cierre"); result.add("21");}
-            case "{" -> {result.add("Llave de Apertura"); result.add("22");}
-            case "}" -> {result.add("Llave de Cierre"); result.add("23");}
-            case "[" -> {result.add("Parentesis cuadrado de apertura"); result.add("24");}
-            case "]" -> {result.add("Parentesis cuadrado de cierre"); result.add("25");}
-            case "=" -> {result.add("Signo de Asignacion"); result.add("26");}
-            case "if" -> {result.add("Palabra reservada if"); result.add("27");}
-            case "while" -> {result.add("Palabra reservada while"); result.add("28");}
-            case "for" -> {result.add("Palabra reservada for"); result.add("29");}
-            case "do" -> {result.add("Palabra reservada do"); result.add("30");}
-            case "return" -> {result.add("Palabra reservada return"); result.add("31");}
-            case "else" -> {result.add("Palabra reservada else"); result.add("32");}
-            case "$" -> {result.add("Palabra reservada $"); result.add("33");}
-            case "." -> {result.add("Operador ."); result.add("34");}
-            default -> {result.add("Identificador ".concat(token)); result.add("35");}
+            case ";" -> {result.add("Punto y coma"); result.add("0");}
+            case "," -> {result.add("Coma"); result.add("18");}
+            case "(" -> {result.add("Parentesis de Apertura"); result.add("19");}
+            case ")" -> {result.add("Parentesis de Cierre"); result.add("20");}
+            case "{" -> {result.add("Llave de Apertura"); result.add("21");}
+            case "}" -> {result.add("Llave de Cierre"); result.add("22");}
+            case "[" -> {result.add("Parentesis cuadrado de apertura"); result.add("23");}
+            case "]" -> {result.add("Parentesis cuadrado de cierre"); result.add("24");}
+            case "=" -> {result.add("Signo de Asignacion"); result.add("25");}
+            case "if" -> {result.add("Palabra reservada if"); result.add("26");}
+            case "while" -> {result.add("Palabra reservada while"); result.add("27");}
+            case "for" -> {result.add("Palabra reservada for"); result.add("28");}
+            case "do" -> {result.add("Palabra reservada do"); result.add("29");}
+            case "return" -> {result.add("Palabra reservada return"); result.add("30");}
+            case "else" -> {result.add("Palabra reservada else"); result.add("31");}
+            case "$" -> {result.add("Palabra reservada $"); result.add("32");}
+            case "." -> {result.add("Operador ."); result.add("33");}
+            default -> {result.add("Identificador ".concat(token)); result.add("34");}
         }
         
         return result;
@@ -523,6 +523,7 @@ public class AL extends javax.swing.JFrame {
                 "Lexema", "Token", "ID"
             }
         ));
+        tokensTable.setShowGrid(true);
         jScrollPane2.setViewportView(tokensTable);
 
         analizeBTN.setText("Analizar");
