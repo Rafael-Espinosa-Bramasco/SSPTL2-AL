@@ -20,6 +20,7 @@ public class AL extends javax.swing.JFrame {
         initComponents();
         this.input = new ArrayList<>();
         this.tokenArray = new ArrayList<>();
+        this.tokenLinesArray = new ArrayList<>();
         
         this.tableModel = (DefaultTableModel) this.tokensTable.getModel();
         
@@ -38,6 +39,8 @@ public class AL extends javax.swing.JFrame {
         // Arrays
         ArrayList<Character> input;
         ArrayList<String> tokenArray;
+        ArrayList<ArrayList> tokenLinesArray;
+        ArrayList<ArrayList> LinesOfCode;
     
         // Table Model
         DefaultTableModel tableModel;
@@ -84,7 +87,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean isIgnorable(char c){
         switch(c){
-            case ' ', '\n', '\t' -> {return true;}
+            case ' ', '\t' -> {return true;}
             default -> {return false;}
         }
     }
@@ -101,9 +104,12 @@ public class AL extends javax.swing.JFrame {
         return c == '"';
     }
     
+    private boolean isJump(char c){
+        return c == '\n';
+    }
+    
     private void clearComments(){
         for(int i = 0; i < this.input.size() ; i++){
-            char x = this.input.get(i);
             if(!this.input.isEmpty() && this.input.get(i) == '/' && (this.input.size() - 1 >= i + 1) && this.input.get(i + 1) == '/'){
                 while(!this.input.isEmpty() && this.input.get(i) != '\n'){
                     this.input.remove(i);
@@ -141,12 +147,26 @@ public class AL extends javax.swing.JFrame {
                 this.input.remove(0);
                 this.tokenArray.add(";");
             }
+            else if(this.isJump(act)){
+                this.input.remove(0);
+                this.tokenLinesArray.add(this.tokenArray);
+                this.tokenArray = new ArrayList();
+            }
         }
         
-        while(!this.tokenArray.isEmpty()){
-            this.addToTable(this.tokenArray.get(0));
-            this.tokenArray.remove(0);
+        if(!this.tokenArray.isEmpty()){
+            this.tokenLinesArray.add(this.tokenArray);
+            this.tokenArray = new ArrayList();
         }
+        
+        for(int i = 0; i < this.tokenLinesArray.size() ; i++){
+            for(int j = 0 ; j < this.tokenLinesArray.get(i).size() ; j++){
+                this.addToTable(this.tokenLinesArray.get(i).get(j).toString());
+            }
+        }
+        
+        this.LinesOfCode = (ArrayList) this.tokenLinesArray.clone();
+        this.tokenLinesArray.clear();
     }
     
     private void pS(){
@@ -587,6 +607,9 @@ public class AL extends javax.swing.JFrame {
 
     private void analizeBTNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analizeBTNActionPerformed
         // TODO add your handling code here:
+        
+        this.input.clear();
+        
         String text = this.inputCode.getText();
         
         for(int i = 0; i < text.length() ; i++){
