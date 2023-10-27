@@ -5,6 +5,7 @@
 package App;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -41,6 +42,7 @@ public class AL extends javax.swing.JFrame {
         ArrayList<String> tokenArray;
         ArrayList<ArrayList> tokenLinesArray;
         ArrayList<ArrayList> LinesOfCode;
+        ArrayList<ArrayList<Integer>> KEYS;
     
         // Table Model
         DefaultTableModel tableModel;
@@ -510,7 +512,148 @@ public class AL extends javax.swing.JFrame {
         
         return result;
     }
-
+    
+    private boolean isType(String T){
+        switch(T){
+            case "int", "void", "char", "string", "float" -> {return true;}
+        }
+        
+        return false;
+    }
+    
+    private boolean isBlock(String T){
+        switch(T){
+            case "if", "while" -> {return true;}
+        }
+        
+        return false;
+    }
+    
+    private boolean isLetter(char c){
+        int x = (int) c;
+        return ((x >= 97 && x <= 122) || (x >= 65 && x <= 90));
+    }
+    private boolean isNum(char c){
+        int x = (int) c;
+        return (x >= 48 && x <= 57);
+    }
+    private boolean isOpenPar(char c){
+        return c == '(';
+    }
+    private boolean isClosePar(char c){
+        return c == ')';
+    }
+    private boolean isOpenPar(String s){
+        return "(".equals(s);
+    }
+    private boolean isClosePar(String s){
+        return ")".equals(s);
+    }
+    private boolean isOP(char c){
+        switch(c){
+            case '+','-','*','/' -> {return true;}
+            default -> {return false;}
+        }
+    }
+    private boolean isOP(String s){
+        switch(s){
+            case "+","-","*","/" -> {return true;}
+            default -> {return false;}
+        }
+    }
+    
+    private boolean isNumber(String num){
+        for(int i = 0 ; i < num.length() ; i++){
+            if(!isNum(num.charAt(i))){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    private boolean isIdentifier(String id){
+        return isLetter(id.charAt(0));
+    }
+    
+    private boolean isReserved(String T){
+        return true;
+    }
+    
+    private void startSyntacticAnalysis(){
+        ArrayList<Integer> LINES;
+        HashMap<ArrayList<Integer>, String> TOKENS = new HashMap<>();
+        KEYS = new ArrayList<>();
+        
+        for(int i = 0; i < this.LinesOfCode.size() ; i++){
+            for(int j = 0 ; j < this.LinesOfCode.get(i).size() ; j++){
+                LINES = new ArrayList<>();
+                LINES.add(i+1);
+                LINES.add(j+1);
+                TOKENS.put(LINES, (String) LinesOfCode.get(i).get(j));
+                KEYS.add(LINES);
+            }
+        }
+        
+        PROGRAM(TOKENS);
+    }
+    
+    // Funciones de Gramatica
+    private boolean PROGRAM(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return STATEMENTS(TOKENS_LINES);
+    }
+    
+    private boolean STATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean S = STATEMENT(TOKENS_LINES);
+        boolean MS = MORE_STATEMENTS(TOKENS_LINES);
+        return S && MS;
+    }
+    
+    private boolean STATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        // check decl or block
+        boolean F;
+        if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
+            F = BLOCK(TOKENS_LINES);
+        }else{
+            F = DECLARATION(TOKENS_LINES);
+        }
+        
+        return F;
+    }
+    
+    private boolean MORE_STATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return false;
+    }
+    
+    private boolean DECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        
+        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+            INIT(TOKENS_LINES);
+        }else{
+            //ID
+        }
+        
+        return false;
+    }
+    
+    private boolean INIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        
+        // CHECK TYPE
+        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+        }else{
+            return false;
+        }
+        
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){}
+        
+        return false;
+    }
+    
+    private boolean BLOCK(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return false;
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -653,6 +796,9 @@ public class AL extends javax.swing.JFrame {
         this.startP();
 
         this.isFilled = true;
+        
+        // AS
+        this.startSyntacticAnalysis();
     }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
