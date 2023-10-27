@@ -718,7 +718,7 @@ public class AL extends javax.swing.JFrame {
 
         jLabel2.setText("Tabla Análisis Léxico");
 
-        jLabel3.setText("Análisis Léxico");
+        jLabel3.setText("Análisis Sintáctico");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
