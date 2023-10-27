@@ -549,12 +549,6 @@ public class AL extends javax.swing.JFrame {
     private boolean isClosePar(String s){
         return ")".equals(s);
     }
-    private boolean isOP(char c){
-        switch(c){
-            case '+','-','*','/' -> {return true;}
-            default -> {return false;}
-        }
-    }
     private boolean isOP(String s){
         switch(s){
             case "+","-","*","/" -> {return true;}
@@ -581,7 +575,10 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean isReserved(String T){
-        return true;
+        switch(T){
+            case "int", "void", "float", "string", "char", "if", "while", "for", "do", "return", "else" -> {return true;}
+        }
+        return false;
     }
     
     private void startSyntacticAnalysis(){
@@ -852,7 +849,7 @@ public class AL extends javax.swing.JFrame {
 
         jLabel2.setText("Tabla Análisis Léxico");
 
-        jLabel3.setText("Análisis Léxico");
+        jLabel3.setText("Análisis Sintáctico");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
