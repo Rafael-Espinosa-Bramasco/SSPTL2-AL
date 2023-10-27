@@ -549,12 +549,6 @@ public class AL extends javax.swing.JFrame {
     private boolean isClosePar(String s){
         return ")".equals(s);
     }
-    private boolean isOP(char c){
-        switch(c){
-            case '+','-','*','/' -> {return true;}
-            default -> {return false;}
-        }
-    }
     private boolean isOP(String s){
         switch(s){
             case "+","-","*","/" -> {return true;}
@@ -577,7 +571,10 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean isReserved(String T){
-        return true;
+        switch(T){
+            case "int", "void", "float", "string", "char", "if", "while", "for", "do", "return", "else" -> {return true;}
+        }
+        return false;
     }
     
     private void startSyntacticAnalysis(){
