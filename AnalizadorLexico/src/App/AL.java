@@ -645,7 +645,12 @@ public class AL extends javax.swing.JFrame {
             return false;
         }
         
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){}
+        // CHECK ID
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+        }else{
+            return false;
+        }
         
         return false;
     }
