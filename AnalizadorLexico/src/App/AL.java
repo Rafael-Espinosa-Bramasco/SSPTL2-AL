@@ -555,6 +555,12 @@ public class AL extends javax.swing.JFrame {
             default -> {return false;}
         }
     }
+    private boolean isLOP(String s){
+        switch(s){
+            case "&&","||","!",">","<",">=","<=","==","!=" -> {return true;}
+            default -> {return false;}
+        }
+    }
     
     private boolean isSC(String T){
         return ";".equals(T);
@@ -570,8 +576,28 @@ public class AL extends javax.swing.JFrame {
         return true;
     }
     
+    private boolean isFloat(String num){
+        int p = 0;
+        for(int i = 0 ; i < num.length() ; i++){
+            if('.' == num.charAt(i)){
+                p = i;
+                break;
+            }else if(!isNum(num.charAt(i))){
+                return false;
+            }
+        }
+        
+        for(p = p ; p < num.length() ; p++){
+            if(!isNum(num.charAt(p))){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
     private boolean isIdentifier(String id){
-        return isLetter(id.charAt(0));
+        return isLetter(id.charAt(0)) && !isReserved(id);
     }
     
     private boolean isReserved(String T){
@@ -581,7 +607,7 @@ public class AL extends javax.swing.JFrame {
         return false;
     }
     
-    private void startSyntacticAnalysis(){
+    private boolean startSyntacticAnalysis(){
         ArrayList<Integer> LINES;
         HashMap<ArrayList<Integer>, String> TOKENS = new HashMap<>();
         KEYS = new ArrayList<>();
@@ -596,21 +622,62 @@ public class AL extends javax.swing.JFrame {
             }
         }
         
-        PROGRAM(TOKENS);
+        return PROGRAM(TOKENS);
+    }
+    
+    private void showErrorMessage(String ET,HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        System.out.print("Token: ");
+        System.out.print(TOKENS_LINES.get(KEYS.get(0)));
+        System.out.print(" not expected.\n");
+        String Line = String.valueOf(KEYS.get(0).get(0));
+        String TN = String.valueOf(KEYS.get(0).get(1));
+        System.out.println("At Line ".concat(Line).concat(", Line Token Number ").concat(TN).concat("."));
+        
+        boolean flag = true;
+        int spaces = 0;
+        for(int i = 0 ; i < LinesOfCode.get(KEYS.get(0).get(0) - 1).size() ; i++){
+            System.out.print(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)) + ' ');
+            if(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).compareTo(TOKENS_LINES.get(KEYS.get(0)))==0){
+                flag = false;
+                spaces++;
+            }
+            if(flag){
+                spaces += ((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).length();
+                spaces++;
+            }
+        }
+        System.out.println();
+        for(int i = 0 ; i < spaces ; i++){
+            System.out.print('-');
+        }
+        System.out.println('^');
+        System.out.println("Expected: ".concat(ET).concat("."));
     }
     
     // Funciones de Gramatica
     private boolean PROGRAM(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
         return STATEMENTS(TOKENS_LINES);
     }
     
     private boolean STATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
         boolean S = STATEMENT(TOKENS_LINES);
         boolean MS = MORE_STATEMENTS(TOKENS_LINES);
         return S && MS;
     }
     
     private boolean STATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+
         // check decl or block
         boolean F;
         if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
@@ -634,89 +701,163 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean DECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        boolean x = false;
+        
         if(isType(TOKENS_LINES.get(KEYS.get(0)))){
-            if(!INIT(TOKENS_LINES)){
+            if(! (x = INIT(TOKENS_LINES))){
                 return false;
             }
         }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
-            if(!ID(TOKENS_LINES)){
+            if(! (x = CALL(TOKENS_LINES))){
                 return false;
             }
         }
         
-        if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
-            TOKENS_LINES.remove(KEYS.get(0));
-            KEYS.remove(0);
-            return true;
+        return x;
+    }
+    
+    private boolean INIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        // Check Type
+        if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+            TYPE(TOKENS_LINES);
+        }else{
+            return false;
+        }
+        
+        // Check ID
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+            ID(TOKENS_LINES);
+        }else{
+            return false;
+        }
+        
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        // REST...
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=", ",", "(" -> {
+                return INIT_TYPE(TOKENS_LINES);
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+    
+    private boolean INIT_TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                if(!EXPRESSION(TOKENS_LINES)){
+                    return false;
+                }
+                
+                // semicolon
+                if(";".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                    TOKENS_LINES.remove(KEYS.get(0));
+                    KEYS.remove(0);
+                    
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+            case "," -> {
+                return MORE_INITS(TOKENS_LINES);
+            }
+            case "(" -> {
+                HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
+                
+                INIT_PARAMS_HASH.put(KEYS.get(0), "(");
+                
+                TOKENS_LINES.remove(KEYS.get(0));
+                
+                int openPar = 1;
+                int keyIndex = 1;
+                while(openPar > 0 && keyIndex < KEYS.size()){
+                    if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                        openPar++;
+                    }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                        openPar--;
+                    }
+                    
+                    INIT_PARAMS_HASH.put(KEYS.get(keyIndex), TOKENS_LINES.get(KEYS.get(keyIndex)));
+                    TOKENS_LINES.remove(KEYS.get(keyIndex));
+                    keyIndex++;
+                }
+                
+                if(openPar >= 1){
+                    return false;
+                }else{
+                    if(INIT_PARAMS(INIT_PARAMS_HASH)){
+                        
+                        if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                            return false;
+                        }
+                        
+                        HashMap<ArrayList<Integer>, String> FSTATEMENTS_HASH = new HashMap<>();
+                        
+                        FSTATEMENTS_HASH.put(KEYS.get(0), "{");
+                
+                        TOKENS_LINES.remove(KEYS.get(0));
+                        
+                        int openKey = 1;
+                        int keyIndex2 = 1;
+                        while(openKey > 0 && keyIndex2 < KEYS.size()){
+                            if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openKey++;
+                            }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openKey--;
+                            }
+
+                            FSTATEMENTS_HASH.put(KEYS.get(keyIndex2), TOKENS_LINES.get(KEYS.get(keyIndex2)));
+                            TOKENS_LINES.remove(KEYS.get(keyIndex2));
+                            keyIndex2++;
+                        }
+                        
+                        if(openKey >= 1){
+                            return false;
+                        }else{
+                            return FSTATEMENTS(FSTATEMENTS_HASH);
+                        }
+                    }else{
+                        return false;
+                    }
+                }
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+    
+    private boolean INIT_PARAMS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TYPE(TOKENS_LINES)){
+            if(ID(TOKENS_LINES)){
+                return MORE_PARAMS(TOKENS_LINES);
+            }
         }
         
         return false;
     }
     
-    private boolean INIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        
-        boolean T = false;
-        boolean ID = false;
-        boolean X = false;
-        
-        // CHECK TYPE
-        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
-            T = TYPE(TOKENS_LINES);
-        }else{
-            return false;
-        }
-        
-        // CHECK ID
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
-            ID = ID(TOKENS_LINES);
-        }else{
-            return false;
-        }
-        
-        // Check ( par
-        if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
-            // check parenthesis balance
-            HashMap<ArrayList<Integer>, String> PARAMS_HASHMAP = new HashMap<>();
-            
-            PARAMS_HASHMAP.put(KEYS.get(0), TOKENS_LINES.get(KEYS.get(0)));
-            TOKENS_LINES.remove(KEYS.get(0));
-            
-            int openParNum = 1;
-            int index = 1;
-            while(openParNum > 0 || index < KEYS.size()){
-                if(isClosePar(TOKENS_LINES.get(KEYS.get(index)))){
-                    openParNum--;
-                }
-                else if(isOpenPar(TOKENS_LINES.get(KEYS.get(index)))){
-                    openParNum++;
-                }
-                
-                PARAMS_HASHMAP.put(KEYS.get(index), TOKENS_LINES.get(KEYS.get(index)));
-                TOKENS_LINES.remove(KEYS.get(index));
-                
-                index++;
-            }
-            
-            X = PARAMS(TOKENS_LINES);
-            
-            // Check {
-            if("{".equals(TOKENS_LINES.get(KEYS.get(0)))){
-                // Balance {}
-            }else{
-                return false;
-            }
-        }else{
-            X = INIT_BODY(TOKENS_LINES);
-        }
-        
-        return T && ID && X;
-    }
-    
-    private boolean INIT_BODY(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        boolean T;
-        boolean ID;
-        boolean X;
-        
+    private boolean MORE_PARAMS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
             return true;
         }
@@ -725,45 +866,601 @@ public class AL extends javax.swing.JFrame {
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
-            // CHECK TYPE
-            if(isType(TOKENS_LINES.get(KEYS.get(0)))){
-                T = TYPE(TOKENS_LINES);
-            }else{
-                return false;
+            if(TYPE(TOKENS_LINES)){
+                if(ID(TOKENS_LINES)){
+                    return MORE_PARAMS(TOKENS_LINES);
+                }
             }
+        }
+        
+        return false;
+    }
+    
+    private boolean FSTATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean x,y;
+        
+        x = FSTATEMENT(TOKENS_LINES);
+        y = MORE_FSTATEMENTS(TOKENS_LINES);
+        
+        return x && y;
+    }
+    
+    private boolean FSTATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
 
-            // CHECK ID
-            if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
-                ID = ID(TOKENS_LINES);
-            }else{
+        // check decl or block
+        boolean F;
+        if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
+            F = BLOCK(TOKENS_LINES);
+        }else{
+            F = FDECLARATION(TOKENS_LINES);
+        }
+        
+        return F;
+    }
+    
+    private boolean FDECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        boolean x = false;
+        
+        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+            if(! (x = FINIT(TOKENS_LINES))){
                 return false;
             }
-            
-            // INIT BODY
-            X = INIT_BODY(TOKENS_LINES);
-            
-            return T && ID && X;
-            
-        }else if("=".equals(TOKENS_LINES.get(KEYS.get(0)))){
-            TOKENS_LINES.remove(KEYS.get(0));
-            KEYS.remove(0);
-            
-            return EXPRESSION(TOKENS_LINES);
+        }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+            if(! (x = CALL(TOKENS_LINES))){
+                return false;
+            }
+        }else if("return".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            if(! (x = RET(TOKENS_LINES))){
+                return false;
+            }
+        }
+        
+        return x;
+    }
+    
+    private boolean FINIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        // Check Type
+        if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+            TYPE(TOKENS_LINES);
         }else{
-            return true;
+            return false;
+        }
+        
+        // Check ID
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+            ID(TOKENS_LINES);
+        }else{
+            return false;
+        }
+        
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        // REST...
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=", ",", "(" -> {
+                return FINIT_TYPE(TOKENS_LINES);
+            }
+            default -> {
+                return false;
+            }
         }
     }
     
-    private boolean EXPRESSION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+    private boolean FINIT_TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                if(!EXPRESSION(TOKENS_LINES)){
+                    return false;
+                }
+                
+                // semicolon
+                if(";".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                    TOKENS_LINES.remove(KEYS.get(0));
+                    KEYS.remove(0);
+                    
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+            case "," -> {
+                return MORE_INITS(TOKENS_LINES);
+            }default -> {
+                return false;
+            }
+        }
+    }
+    
+    private boolean RET(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if("return".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            if(EXPRESSION(TOKENS_LINES)){
+                if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
+                    TOKENS_LINES.remove(KEYS.get(0));
+                    KEYS.remove(0);
+                    
+                    return true;
+                }
+                
+                return false;
+            }else{
+                return false;
+            }
+        }
         return false;
     }
     
-    private boolean PARAMS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+    private boolean MORE_FSTATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        
+        boolean x,y;
+        
+        x = FSTATEMENT(TOKENS_LINES);
+        y = MORE_FSTATEMENTS(TOKENS_LINES);
+        
+        return x && y;
+    }
+    
+    private boolean MORE_INITS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            return true;
+        }
+        
+        if(",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            if(TYPE(TOKENS_LINES)){
+                if(ID(TOKENS_LINES)){
+                    return MORE_INITS(TOKENS_LINES);
+                }
+            }
+        }
+        
         return false;
+    }
+    
+    private boolean CALL(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean x,y;
+        
+        x = ID(TOKENS_LINES);
+        y = MORE_CALL(TOKENS_LINES);
+        
+        return x && y;
+    }
+    
+    private boolean MORE_CALL(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                if(!EXPRESSION(TOKENS_LINES)){
+                    return false;
+                }
+                
+                // semicolon
+                if(";".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                    TOKENS_LINES.remove(KEYS.get(0));
+                    KEYS.remove(0);
+                    
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+            case "(" -> {
+                HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
+                
+                INIT_PARAMS_HASH.put(KEYS.get(0), "(");
+                
+                TOKENS_LINES.remove(KEYS.get(0));
+                
+                int openPar = 1;
+                int keyIndex = 1;
+                while(openPar > 0 && keyIndex < KEYS.size()){
+                    if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                        openPar++;
+                    }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                        openPar--;
+                    }
+                    
+                    INIT_PARAMS_HASH.put(KEYS.get(keyIndex), TOKENS_LINES.get(KEYS.get(keyIndex)));
+                    TOKENS_LINES.remove(KEYS.get(keyIndex));
+                    keyIndex++;
+                }
+                
+                if(openPar >= 1){
+                    return false;
+                }else{
+                    if(CALL_PARAMS(INIT_PARAMS_HASH)){
+                        if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
+                            TOKENS_LINES.remove(KEYS.get(0));
+                            KEYS.remove(0);
+                            
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }default -> {
+                return false;
+            }
+        }
+    }
+    
+    private boolean CALL_PARAMS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        
+        boolean x,y;
+        
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+            x = ID(TOKENS_LINES);
+        }else{
+            x = MN(TOKENS_LINES);
+        }
+        
+        y = MORE_CALLP(TOKENS_LINES);
+        
+        return x && y;
+    }
+    
+    private boolean MORE_CALLP(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        
+        boolean x,y;
+        
+        if(!",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            return false;
+        }
+        
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+            x = ID(TOKENS_LINES);
+        }else{
+            x = MN(TOKENS_LINES);
+        }
+        
+        y = MORE_CALLP(TOKENS_LINES);
+        
+        return x && y;
     }
     
     private boolean BLOCK(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "if" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                switch(TOKENS_LINES.get(KEYS.get(0))){
+                    case "(" -> {
+                        HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
+
+                        INIT_PARAMS_HASH.put(KEYS.get(0), "(");
+
+                        TOKENS_LINES.remove(KEYS.get(0));
+
+                        int openPar = 1;
+                        int keyIndex = 1;
+                        while(openPar > 0 && keyIndex < KEYS.size()){
+                            if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openPar++;
+                            }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openPar--;
+                            }
+
+                            INIT_PARAMS_HASH.put(KEYS.get(keyIndex), TOKENS_LINES.get(KEYS.get(keyIndex)));
+                            TOKENS_LINES.remove(KEYS.get(keyIndex));
+                            keyIndex++;
+                        }
+
+                        if(openPar >= 1){
+                            return false;
+                        }else{
+                            if(LE(INIT_PARAMS_HASH)){
+                                if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                                    return false;
+                                }
+
+                                HashMap<ArrayList<Integer>, String> FSTATEMENTS_HASH = new HashMap<>();
+
+                                FSTATEMENTS_HASH.put(KEYS.get(0), "{");
+
+                                TOKENS_LINES.remove(KEYS.get(0));
+
+                                int openKey = 1;
+                                int keyIndex2 = 1;
+                                while(openKey > 0 && keyIndex2 < KEYS.size()){
+                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                        openKey++;
+                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                        openKey--;
+                                    }
+
+                                    FSTATEMENTS_HASH.put(KEYS.get(keyIndex2), TOKENS_LINES.get(KEYS.get(keyIndex2)));
+                                    TOKENS_LINES.remove(KEYS.get(keyIndex2));
+                                    keyIndex2++;
+                                }
+
+                                if(openKey >= 1){
+                                    return false;
+                                }else{
+                                    if(BSTATEMENTS(FSTATEMENTS_HASH)){
+                                        if("else".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                                            return ELSE(TOKENS_LINES);
+                                        }else{
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                            return false;
+                        }
+                    }default -> {return false;}
+                }
+            }
+            case "while" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                switch(TOKENS_LINES.get(KEYS.get(0))){
+                    case "(" -> {
+                        HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
+
+                        INIT_PARAMS_HASH.put(KEYS.get(0), "(");
+
+                        TOKENS_LINES.remove(KEYS.get(0));
+
+                        int openPar = 1;
+                        int keyIndex = 1;
+                        while(openPar > 0 && keyIndex < KEYS.size()){
+                            if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openPar++;
+                            }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openPar--;
+                            }
+
+                            INIT_PARAMS_HASH.put(KEYS.get(keyIndex), TOKENS_LINES.get(KEYS.get(keyIndex)));
+                            TOKENS_LINES.remove(KEYS.get(keyIndex));
+                            keyIndex++;
+                        }
+
+                        if(openPar >= 1){
+                            return false;
+                        }else{
+                            if(LE(INIT_PARAMS_HASH)){
+                                if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                                    return false;
+                                }
+
+                                HashMap<ArrayList<Integer>, String> FSTATEMENTS_HASH = new HashMap<>();
+
+                                FSTATEMENTS_HASH.put(KEYS.get(0), "{");
+
+                                TOKENS_LINES.remove(KEYS.get(0));
+
+                                int openKey = 1;
+                                int keyIndex2 = 1;
+                                while(openKey > 0 && keyIndex2 < KEYS.size()){
+                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                        openKey++;
+                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                        openKey--;
+                                    }
+
+                                    FSTATEMENTS_HASH.put(KEYS.get(keyIndex2), TOKENS_LINES.get(KEYS.get(keyIndex2)));
+                                    TOKENS_LINES.remove(KEYS.get(keyIndex2));
+                                    keyIndex2++;
+                                }
+
+                                if(openKey >= 1){
+                                    return false;
+                                }else{
+                                    return BSTATEMENTS(FSTATEMENTS_HASH);
+                                }
+                            }
+                            return false;
+                        }
+                    }default -> {return false;}
+                }
+            }
+        }
+        
         return false;
+    }
+    
+    private boolean ELSE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "else" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                switch(TOKENS_LINES.get(KEYS.get(0))){
+                    case "{" -> {
+                        HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
+
+                        INIT_PARAMS_HASH.put(KEYS.get(0), "{");
+
+                        TOKENS_LINES.remove(KEYS.get(0));
+
+                        int openPar = 1;
+                        int keyIndex = 1;
+                        while(openPar > 0 && keyIndex < KEYS.size()){
+                            if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openPar++;
+                            }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                openPar--;
+                            }
+
+                            INIT_PARAMS_HASH.put(KEYS.get(keyIndex), TOKENS_LINES.get(KEYS.get(keyIndex)));
+                            TOKENS_LINES.remove(KEYS.get(keyIndex));
+                            keyIndex++;
+                        }
+
+                        if(openPar >= 1){
+                            return false;
+                        }else{
+                            return BSTATEMENTS(INIT_PARAMS_HASH);
+                        }
+                    }default -> {return false;}
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    private boolean BSTATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        boolean S = BSTATEMENT(TOKENS_LINES);
+        boolean MS = MORE_BSTATEMENTS(TOKENS_LINES);
+        return S && MS;
+    }
+    
+    private boolean BSTATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+
+        // check decl or block
+        boolean F;
+        if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
+            F = BLOCK(TOKENS_LINES);
+        }else{
+            F = BDECLARATION(TOKENS_LINES);
+        }
+        
+        return F;
+    }
+    
+    private boolean MORE_BSTATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        
+        boolean S = BSTATEMENT(TOKENS_LINES);
+        boolean MS = MORE_BSTATEMENTS(TOKENS_LINES);
+        
+        return S && MS;
+    }
+    
+    private boolean BDECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        boolean x = false;
+        
+        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+            if(! (x = BINIT(TOKENS_LINES))){
+                return false;
+            }
+        }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+            if(! (x = CALL(TOKENS_LINES))){
+                return false;
+            }
+        }
+        
+        return x;
+    }
+    
+    private boolean BINIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        // Check Type
+        if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+            TYPE(TOKENS_LINES);
+        }else{
+            return false;
+        }
+        
+        // Check ID
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+            ID(TOKENS_LINES);
+        }else{
+            return false;
+        }
+        
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        // REST...
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=", ",", "(" -> {
+                return BINIT_TYPE(TOKENS_LINES);
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+    
+    private boolean BINIT_TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(TOKENS_LINES.isEmpty()){
+            return false;
+        }
+        
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "=" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                if(!EXPRESSION(TOKENS_LINES)){
+                    return false;
+                }
+                
+                // semicolon
+                if(";".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                    TOKENS_LINES.remove(KEYS.get(0));
+                    KEYS.remove(0);
+                    
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+            case "," -> {
+                return MORE_INITS(TOKENS_LINES);
+            }default -> {
+                return false;
+            }
+        }
     }
     
     private boolean TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
@@ -777,7 +1474,7 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean ID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             return true;
@@ -786,8 +1483,281 @@ public class AL extends javax.swing.JFrame {
         return false;
     }
     
-    private boolean BLOCK(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+    private boolean EXPRESSION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean x = false;
+        boolean y = false;
+        
+        HashMap<ArrayList<Integer>, String> STATE = (HashMap<ArrayList<Integer>, String>) TOKENS_LINES.clone();
+        HashMap<ArrayList<Integer>, String> STATE1 = (HashMap<ArrayList<Integer>, String>) STATE.clone();
+        HashMap<ArrayList<Integer>, String> STATE2 = (HashMap<ArrayList<Integer>, String>) STATE.clone();
+        
+        x = ME(STATE1);
+        
+        if(x){
+            TOKENS_LINES = STATE1;
+        }else{
+            y = LE(STATE2);
+            if(y){
+                TOKENS_LINES = STATE2;
+            }
+        }
+        
+        return x || y;
+    }
+    ///////////////////////////////////////////////////////////////////////////
+    private boolean LE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean T = false;
+        boolean RE = false;
+        
+        if(!TOKENS_LINES.isEmpty() && (isNumber(TOKENS_LINES.get(KEYS.get(0))) || isIdentifier(TOKENS_LINES.get(KEYS.get(0))))){
+            T = this.LT(TOKENS_LINES);
+            RE = this.LRE(TOKENS_LINES);
+        }else if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            HashMap<ArrayList<Integer>, String> termArray = new HashMap<>();
+                
+            int numPar = 1;
+            int keysIndex = 1;
+            TOKENS_LINES.remove(KEYS.get(0));
+            termArray.put(KEYS.get(0), "(");
+            while(numPar > 0 && keysIndex < KEYS.size()){
+                if(isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                    numPar++;
+                }else if(isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                    numPar--;
+                }
+                
+                termArray.put(KEYS.get(keysIndex), TOKENS_LINES.get(KEYS.get(keysIndex)));
+                TOKENS_LINES.remove(KEYS.get(keysIndex));
+            }
+
+            if(numPar >= 1){
+                return false;
+            }else{
+                T = this.LT(termArray);
+                RE = this.LRE(TOKENS_LINES);
+                return T && RE;
+            }
+        }
+        
+        return RE && T;
+    }
+    
+    private boolean LRE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean T = false;
+        boolean RE = false;
+        
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        else if(TOKENS_LINES.size() >= 2 && isLOP(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            if(!TOKENS_LINES.isEmpty() && (isNumber(TOKENS_LINES.get(KEYS.get(0))) || isIdentifier(TOKENS_LINES.get(KEYS.get(0)))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
+                T = this.LT(TOKENS_LINES);
+                RE = this.LRE(TOKENS_LINES);
+            }else if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+                HashMap<ArrayList<Integer>, String> termArray = new HashMap<>();
+                
+                int numPar = 1;
+                int keysIndex = 1;
+                TOKENS_LINES.remove(KEYS.get(0));
+                termArray.put(KEYS.get(0), "(");
+                while(numPar > 0 && keysIndex < KEYS.size()){
+                    if(isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                        numPar++;
+                    }else if(isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                        numPar--;
+                    }
+
+                    termArray.put(KEYS.get(keysIndex), TOKENS_LINES.get(KEYS.get(keysIndex)));
+                    TOKENS_LINES.remove(KEYS.get(keysIndex));
+                }
+
+                if(numPar >= 1){
+                    return false;
+                }else{
+                    T = this.LT(termArray);
+                    RE = this.LRE(TOKENS_LINES);
+                    return T && RE;
+                }
+            }
+            
+            return T && RE;
+        }else{
+            return false;
+        }
+    }
+    
+    private boolean LT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            if(TOKENS_LINES.size() >= 3){
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                int s = TOKENS_LINES.size() - 1;
+                TOKENS_LINES.remove(KEYS.get(s));
+                KEYS.remove(s);
+            
+                return this.LE(TOKENS_LINES);
+            }
+
+            return false;
+            
+        }else{
+            if(isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
+                return this.LN(TOKENS_LINES);
+            }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+                return this.LID(TOKENS_LINES);
+            }
+            
+            return LCONST(TOKENS_LINES);
+        }
+    }
+    
+    private boolean LN(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            return true;
+        }
+        
         return false;
+    }
+    
+    private boolean LID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return isIdentifier(TOKENS_LINES.get(KEYS.get(0)));
+    }
+    
+    private boolean LCONST(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        switch(TOKENS_LINES.get(KEYS.get(0))){
+            case "true", "false" -> {
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    private boolean ME(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean T = false;
+        boolean RE = false;
+        
+        if(!TOKENS_LINES.isEmpty() && (isNumber(TOKENS_LINES.get(KEYS.get(0))) || isIdentifier(TOKENS_LINES.get(KEYS.get(0))))){
+            T = this.MT(TOKENS_LINES);
+            RE = this.MRE(TOKENS_LINES);
+        }else if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            HashMap<ArrayList<Integer>, String> termArray = new HashMap<>();
+                
+            int numPar = 1;
+            int keysIndex = 1;
+            TOKENS_LINES.remove(KEYS.get(0));
+            termArray.put(KEYS.get(0), "(");
+            while(numPar > 0 && keysIndex < KEYS.size()){
+                if(isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                    numPar++;
+                }else if(isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                    numPar--;
+                }
+                
+                termArray.put(KEYS.get(keysIndex), TOKENS_LINES.get(KEYS.get(keysIndex)));
+                TOKENS_LINES.remove(KEYS.get(keysIndex));
+            }
+
+            if(numPar >= 1){
+                return false;
+            }else{
+                T = this.MT(termArray);
+                RE = this.MRE(TOKENS_LINES);
+                return T && RE;
+            }
+        }
+        
+        return RE && T;
+    }
+    
+    private boolean MRE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean T = false;
+        boolean RE = false;
+        
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        else if(TOKENS_LINES.size() >= 2 && isOP(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            if(!TOKENS_LINES.isEmpty() && (isNumber(TOKENS_LINES.get(KEYS.get(0))) || isIdentifier(TOKENS_LINES.get(KEYS.get(0))))){
+                T = this.MT(TOKENS_LINES);
+                RE = this.MRE(TOKENS_LINES);
+            }else if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+                HashMap<ArrayList<Integer>, String> termArray = new HashMap<>();
+                
+                int numPar = 1;
+                int keysIndex = 1;
+                TOKENS_LINES.remove(KEYS.get(0));
+                termArray.put(KEYS.get(0), "(");
+                while(numPar > 0 && keysIndex < KEYS.size()){
+                    if(isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                        numPar++;
+                    }else if(isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                        numPar--;
+                    }
+
+                    termArray.put(KEYS.get(keysIndex), TOKENS_LINES.get(KEYS.get(keysIndex)));
+                    TOKENS_LINES.remove(KEYS.get(keysIndex));
+                }
+
+                if(numPar >= 1){
+                    return false;
+                }else{
+                    T = this.MT(termArray);
+                    RE = this.MRE(TOKENS_LINES);
+                    return T && RE;
+                }
+            }
+            
+            return T && RE;
+        }else{
+            return false;
+        }
+    }
+    
+    private boolean MT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            if(TOKENS_LINES.size() >= 3){
+                TOKENS_LINES.remove(KEYS.get(0));
+                KEYS.remove(0);
+                
+                int s = TOKENS_LINES.size() - 1;
+                TOKENS_LINES.remove(KEYS.get(s));
+                KEYS.remove(s);
+            
+                return this.ME(TOKENS_LINES);
+            }
+
+            return false;
+            
+        }else{
+            if(isNumber(TOKENS_LINES.get(KEYS.get(0)))){
+                return this.MN(TOKENS_LINES);
+            }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+                return this.MID(TOKENS_LINES);
+            }
+            
+            return false;
+        }
+    }
+    
+    private boolean MN(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)));
+    }
+    
+    private boolean MID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return isIdentifier(TOKENS_LINES.get(KEYS.get(0)));
     }
     
     /**
@@ -934,7 +1904,9 @@ public class AL extends javax.swing.JFrame {
         this.isFilled = true;
         
         // AS
-        this.startSyntacticAnalysis();
+        boolean SAR = this.startSyntacticAnalysis();
+        
+        System.out.println(SAR);
     }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
