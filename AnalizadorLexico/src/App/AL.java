@@ -577,6 +577,10 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean isFloat(String num){
+        if(num.indexOf('.') == -1){
+            return false;
+        }
+        
         int p = 0;
         for(int i = 0 ; i < num.length() ; i++){
             if('.' == num.charAt(i)){
@@ -626,17 +630,17 @@ public class AL extends javax.swing.JFrame {
     }
     
     private void showErrorMessage(String ET,HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        System.out.print("Token: ");
-        System.out.print(TOKENS_LINES.get(KEYS.get(0)));
-        System.out.print(" not expected.\n");
+        addSAMessage("Token: ");
+        addSAMessage(TOKENS_LINES.get(KEYS.get(0)));
+        addSAMessage(" not expected.\n");
         String Line = String.valueOf(KEYS.get(0).get(0));
         String TN = String.valueOf(KEYS.get(0).get(1));
-        System.out.println("At Line ".concat(Line).concat(", Line Token Number ").concat(TN).concat("."));
+        addSAMessage("At Line ".concat(Line).concat(", Line Token Number ").concat(TN).concat(".\n"));
         
         boolean flag = true;
         int spaces = 0;
         for(int i = 0 ; i < LinesOfCode.get(KEYS.get(0).get(0) - 1).size() ; i++){
-            System.out.print(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)) + ' ');
+            addSAMessage(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)) + ' ');
             if(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).compareTo(TOKENS_LINES.get(KEYS.get(0)))==0){
                 flag = false;
                 spaces++;
@@ -646,17 +650,19 @@ public class AL extends javax.swing.JFrame {
                 spaces++;
             }
         }
-        System.out.println();
+        addSAMessage("\n");
         for(int i = 0 ; i < spaces ; i++){
-            System.out.print('-');
+            addSAMessage("-");
         }
-        System.out.println('^');
-        System.out.println("Expected: ".concat(ET).concat("."));
+        addSAMessage("^\n");
+        addSAMessage("Expected: ".concat(ET).concat(".\n"));
+        addSAMessage("\n");
     }
     
     // Funciones de Gramatica
     private boolean PROGRAM(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -665,16 +671,21 @@ public class AL extends javax.swing.JFrame {
     
     private boolean STATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
         boolean S = STATEMENT(TOKENS_LINES);
+        if(!S){
+            return false;
+        }
         boolean MS = MORE_STATEMENTS(TOKENS_LINES);
         return S && MS;
     }
     
     private boolean STATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
 
@@ -695,6 +706,9 @@ public class AL extends javax.swing.JFrame {
         }
         
         boolean S = STATEMENT(TOKENS_LINES);
+        if(!S){
+            return false;
+        }
         boolean MS = MORE_STATEMENTS(TOKENS_LINES);
         
         return S && MS;
@@ -702,6 +716,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean DECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -722,6 +737,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean INIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -740,6 +756,7 @@ public class AL extends javax.swing.JFrame {
         }
         
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -756,6 +773,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean INIT_TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -775,6 +793,7 @@ public class AL extends javax.swing.JFrame {
                     
                     return true;
                 }else{
+                    showErrorMessage(";",TOKENS_LINES);
                     return false;
                 }
             }
@@ -782,6 +801,7 @@ public class AL extends javax.swing.JFrame {
                 return MORE_INITS(TOKENS_LINES);
             }
             case "(" -> {
+                
                 HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
                 
                 INIT_PARAMS_HASH.put(KEYS.get(0), "(");
@@ -803,11 +823,13 @@ public class AL extends javax.swing.JFrame {
                 }
                 
                 if(openPar >= 1){
+                    showErrorMessage(")",TOKENS_LINES);
                     return false;
                 }else{
                     if(INIT_PARAMS(INIT_PARAMS_HASH)){
                         
                         if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                            showErrorMessage("{",TOKENS_LINES);
                             return false;
                         }
                         
@@ -820,9 +842,9 @@ public class AL extends javax.swing.JFrame {
                         int openKey = 1;
                         int keyIndex2 = 1;
                         while(openKey > 0 && keyIndex2 < KEYS.size()){
-                            if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                            if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                 openKey++;
-                            }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                            }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                 openKey--;
                             }
 
@@ -832,6 +854,7 @@ public class AL extends javax.swing.JFrame {
                         }
                         
                         if(openKey >= 1){
+                            showErrorMessage("}",TOKENS_LINES);
                             return false;
                         }else{
                             return FSTATEMENTS(FSTATEMENTS_HASH);
@@ -848,10 +871,18 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean INIT_PARAMS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        TOKENS_LINES.remove(KEYS.get(0));
+        KEYS.remove(0);
+
+        int S = TOKENS_LINES.size() - 1;
+        TOKENS_LINES.remove(KEYS.get(S));
+        KEYS.remove(S);
+        
         if(TYPE(TOKENS_LINES)){
             if(ID(TOKENS_LINES)){
                 return MORE_PARAMS(TOKENS_LINES);
             }
+            return false;
         }
         
         return false;
@@ -870,16 +901,29 @@ public class AL extends javax.swing.JFrame {
                 if(ID(TOKENS_LINES)){
                     return MORE_PARAMS(TOKENS_LINES);
                 }
+                return false;
             }
+            return false;
         }
         
+        showErrorMessage(",",TOKENS_LINES);
         return false;
     }
     
     private boolean FSTATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        TOKENS_LINES.remove(KEYS.get(0));
+        KEYS.remove(0);
+
+        int S = TOKENS_LINES.size() - 1;
+        TOKENS_LINES.remove(KEYS.get(S));
+        KEYS.remove(S);
+        
         boolean x,y;
         
         x = FSTATEMENT(TOKENS_LINES);
+        if(!x){
+            return false;
+        }
         y = MORE_FSTATEMENTS(TOKENS_LINES);
         
         return x && y;
@@ -887,6 +931,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean FSTATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
 
@@ -903,6 +948,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean FDECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -927,6 +973,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean FINIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -934,6 +981,7 @@ public class AL extends javax.swing.JFrame {
         if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             TYPE(TOKENS_LINES);
         }else{
+            showErrorMessage("int or float or string or char",TOKENS_LINES);
             return false;
         }
         
@@ -941,10 +989,12 @@ public class AL extends javax.swing.JFrame {
         if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             ID(TOKENS_LINES);
         }else{
+            showErrorMessage("Identifier",TOKENS_LINES);
             return false;
         }
         
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -961,6 +1011,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean FINIT_TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -980,6 +1031,7 @@ public class AL extends javax.swing.JFrame {
                     
                     return true;
                 }else{
+                    showErrorMessage(";",TOKENS_LINES);
                     return false;
                 }
             }
@@ -996,19 +1048,22 @@ public class AL extends javax.swing.JFrame {
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
-            if(EXPRESSION(TOKENS_LINES)){
+            boolean x = EXPRESSION(TOKENS_LINES);
+            if(x){
                 if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
                     TOKENS_LINES.remove(KEYS.get(0));
                     KEYS.remove(0);
                     
                     return true;
                 }
-                
+                showErrorMessage(";",TOKENS_LINES);
                 return false;
             }else{
+                showErrorMessage("Valid logic or mathematic expression",TOKENS_LINES);
                 return false;
             }
         }
+        showErrorMessage("return",TOKENS_LINES);
         return false;
     }
     
@@ -1020,6 +1075,9 @@ public class AL extends javax.swing.JFrame {
         boolean x,y;
         
         x = FSTATEMENT(TOKENS_LINES);
+        if(!x){
+            return false;
+        }
         y = MORE_FSTATEMENTS(TOKENS_LINES);
         
         return x && y;
@@ -1041,9 +1099,11 @@ public class AL extends javax.swing.JFrame {
                 if(ID(TOKENS_LINES)){
                     return MORE_INITS(TOKENS_LINES);
                 }
+                return false;
             }
+            return false;
         }
-        
+        showErrorMessage(",",TOKENS_LINES);
         return false;
     }
     
@@ -1051,6 +1111,9 @@ public class AL extends javax.swing.JFrame {
         boolean x,y;
         
         x = ID(TOKENS_LINES);
+        if(!x){
+            return false;
+        }
         y = MORE_CALL(TOKENS_LINES);
         
         return x && y;
@@ -1073,10 +1136,12 @@ public class AL extends javax.swing.JFrame {
                     
                     return true;
                 }else{
+                    showErrorMessage(";",TOKENS_LINES);
                     return false;
                 }
             }
             case "(" -> {
+                
                 HashMap<ArrayList<Integer>, String> INIT_PARAMS_HASH = new HashMap<>();
                 
                 INIT_PARAMS_HASH.put(KEYS.get(0), "(");
@@ -1098,6 +1163,7 @@ public class AL extends javax.swing.JFrame {
                 }
                 
                 if(openPar >= 1){
+                    showErrorMessage(")",TOKENS_LINES);
                     return false;
                 }else{
                     if(CALL_PARAMS(INIT_PARAMS_HASH)){
@@ -1121,6 +1187,13 @@ public class AL extends javax.swing.JFrame {
             return true;
         }
         
+        TOKENS_LINES.remove(KEYS.get(0));
+        KEYS.remove(0);
+
+        int S = TOKENS_LINES.size() - 1;
+        TOKENS_LINES.remove(KEYS.get(S));
+        KEYS.remove(S);
+        
         boolean x,y;
         
         if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
@@ -1142,6 +1215,7 @@ public class AL extends javax.swing.JFrame {
         boolean x,y;
         
         if(!",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            showErrorMessage(",",TOKENS_LINES);
             return false;
         }
         
@@ -1185,10 +1259,19 @@ public class AL extends javax.swing.JFrame {
                         }
 
                         if(openPar >= 1){
+                            showErrorMessage(")",TOKENS_LINES);
                             return false;
                         }else{
+                            INIT_PARAMS_HASH.remove(KEYS.get(0));
+                            KEYS.remove(0);
+
+                            int S = INIT_PARAMS_HASH.size() - 1;
+                            INIT_PARAMS_HASH.remove(KEYS.get(S));
+                            KEYS.remove(S);
+                            
                             if(LE(INIT_PARAMS_HASH)){
                                 if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                                    showErrorMessage("}",TOKENS_LINES);
                                     return false;
                                 }
 
@@ -1201,9 +1284,9 @@ public class AL extends javax.swing.JFrame {
                                 int openKey = 1;
                                 int keyIndex2 = 1;
                                 while(openKey > 0 && keyIndex2 < KEYS.size()){
-                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey++;
-                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey--;
                                     }
 
@@ -1213,6 +1296,7 @@ public class AL extends javax.swing.JFrame {
                                 }
 
                                 if(openKey >= 1){
+                                    showErrorMessage("}",TOKENS_LINES);
                                     return false;
                                 }else{
                                     if(BSTATEMENTS(FSTATEMENTS_HASH)){
@@ -1226,7 +1310,10 @@ public class AL extends javax.swing.JFrame {
                             }
                             return false;
                         }
-                    }default -> {return false;}
+                    }default -> {
+                        showErrorMessage("(",TOKENS_LINES);
+                        return false;
+                    }
                 }
             }
             case "while" -> {
@@ -1256,10 +1343,18 @@ public class AL extends javax.swing.JFrame {
                         }
 
                         if(openPar >= 1){
+                            showErrorMessage(")",TOKENS_LINES);
                             return false;
                         }else{
+                            INIT_PARAMS_HASH.remove(KEYS.get(0));
+                            KEYS.remove(0);
+
+                            int S = INIT_PARAMS_HASH.size() - 1;
+                            INIT_PARAMS_HASH.remove(KEYS.get(S));
+                            KEYS.remove(S);
                             if(LE(INIT_PARAMS_HASH)){
                                 if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                                    showErrorMessage("{",TOKENS_LINES);
                                     return false;
                                 }
 
@@ -1272,9 +1367,9 @@ public class AL extends javax.swing.JFrame {
                                 int openKey = 1;
                                 int keyIndex2 = 1;
                                 while(openKey > 0 && keyIndex2 < KEYS.size()){
-                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey++;
-                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey--;
                                     }
 
@@ -1284,14 +1379,19 @@ public class AL extends javax.swing.JFrame {
                                 }
 
                                 if(openKey >= 1){
+                                    showErrorMessage("}",TOKENS_LINES);
                                     return false;
                                 }else{
                                     return BSTATEMENTS(FSTATEMENTS_HASH);
                                 }
                             }
+                            showErrorMessage("Valid logic expression",TOKENS_LINES);
                             return false;
                         }
-                    }default -> {return false;}
+                    }default -> {
+                        showErrorMessage("(",TOKENS_LINES);
+                        return false;
+                    }
                 }
             }
         }
@@ -1328,30 +1428,44 @@ public class AL extends javax.swing.JFrame {
                         }
 
                         if(openPar >= 1){
+                            showErrorMessage(")",TOKENS_LINES);
                             return false;
                         }else{
                             return BSTATEMENTS(INIT_PARAMS_HASH);
                         }
-                    }default -> {return false;}
+                    }default -> {showErrorMessage("{",TOKENS_LINES);return false;}
                 }
             }
         }
-        
+        showErrorMessage("possibly else",TOKENS_LINES);
         return false;
     }
     
     private boolean BSTATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
-        boolean S = BSTATEMENT(TOKENS_LINES);
+        TOKENS_LINES.remove(KEYS.get(0));
+        KEYS.remove(0);
+
+        int S = TOKENS_LINES.size() - 1;
+        TOKENS_LINES.remove(KEYS.get(S));
+        KEYS.remove(S);
+        
+        
+        boolean SS = BSTATEMENT(TOKENS_LINES);
+        if(!SS){
+            return false;
+        }
         boolean MS = MORE_BSTATEMENTS(TOKENS_LINES);
-        return S && MS;
+        return SS && MS;
     }
     
     private boolean BSTATEMENT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
 
@@ -1372,6 +1486,9 @@ public class AL extends javax.swing.JFrame {
         }
         
         boolean S = BSTATEMENT(TOKENS_LINES);
+        if(!S){
+            return false;
+        }
         boolean MS = MORE_BSTATEMENTS(TOKENS_LINES);
         
         return S && MS;
@@ -1379,6 +1496,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean BDECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -1386,10 +1504,12 @@ public class AL extends javax.swing.JFrame {
         
         if(isType(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = BINIT(TOKENS_LINES))){
+                showErrorMessage("int or float or string or char",TOKENS_LINES);
                 return false;
             }
         }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = CALL(TOKENS_LINES))){
+                showErrorMessage("Identifier",TOKENS_LINES);
                 return false;
             }
         }
@@ -1399,6 +1519,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean BINIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -1406,6 +1527,7 @@ public class AL extends javax.swing.JFrame {
         if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             TYPE(TOKENS_LINES);
         }else{
+            showErrorMessage("int or float or string or char",TOKENS_LINES);
             return false;
         }
         
@@ -1413,19 +1535,22 @@ public class AL extends javax.swing.JFrame {
         if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             ID(TOKENS_LINES);
         }else{
+            showErrorMessage("Identifier",TOKENS_LINES);
             return false;
         }
         
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
         // REST...
         switch(TOKENS_LINES.get(KEYS.get(0))){
-            case "=", ",", "(" -> {
+            case "=", ","  -> {
                 return BINIT_TYPE(TOKENS_LINES);
             }
             default -> {
+                showErrorMessage("= or ,",TOKENS_LINES);
                 return false;
             }
         }
@@ -1433,6 +1558,7 @@ public class AL extends javax.swing.JFrame {
     
     private boolean BINIT_TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         if(TOKENS_LINES.isEmpty()){
+            showErrorMessage("TOKENS",TOKENS_LINES);
             return false;
         }
         
@@ -1442,6 +1568,7 @@ public class AL extends javax.swing.JFrame {
                 KEYS.remove(0);
                 
                 if(!EXPRESSION(TOKENS_LINES)){
+                    showErrorMessage("Valid logic or mathematic expression",TOKENS_LINES);
                     return false;
                 }
                 
@@ -1452,12 +1579,14 @@ public class AL extends javax.swing.JFrame {
                     
                     return true;
                 }else{
+                    showErrorMessage(";",TOKENS_LINES);
                     return false;
                 }
             }
             case "," -> {
                 return MORE_INITS(TOKENS_LINES);
             }default -> {
+                showErrorMessage(", or =",TOKENS_LINES);
                 return false;
             }
         }
@@ -1469,7 +1598,7 @@ public class AL extends javax.swing.JFrame {
             KEYS.remove(0);
             return true;
         }
-        
+        showErrorMessage("int or float or string or char",TOKENS_LINES);
         return false;
     }
     
@@ -1479,7 +1608,7 @@ public class AL extends javax.swing.JFrame {
             KEYS.remove(0);
             return true;
         }
-        
+        showErrorMessage("Identifier",TOKENS_LINES);
         return false;
     }
     
@@ -1494,11 +1623,20 @@ public class AL extends javax.swing.JFrame {
         x = ME(STATE1);
         
         if(x){
-            TOKENS_LINES = STATE1;
+            TOKENS_LINES.clear();
+            
+            for(int i = 0 ; i < STATE1.size(); i++){
+                TOKENS_LINES.put(KEYS.get(i), STATE1.get(KEYS.get(i)));
+            }
+            
         }else{
             y = LE(STATE2);
             if(y){
-                TOKENS_LINES = STATE2;
+                TOKENS_LINES.clear();
+            
+                for(int i = 0 ; i < STATE2.size(); i++){
+                    TOKENS_LINES.put(KEYS.get(i), STATE2.get(KEYS.get(i)));
+                }
             }
         }
         
@@ -1531,6 +1669,7 @@ public class AL extends javax.swing.JFrame {
             }
 
             if(numPar >= 1){
+                showErrorMessage(")",TOKENS_LINES);
                 return false;
             }else{
                 T = this.LT(termArray);
@@ -1546,7 +1685,7 @@ public class AL extends javax.swing.JFrame {
         boolean T = false;
         boolean RE = false;
         
-        if(TOKENS_LINES.isEmpty()){
+        if(TOKENS_LINES.isEmpty() || isSC(TOKENS_LINES.get(KEYS.get(0)))){
             return true;
         }
         else if(TOKENS_LINES.size() >= 2 && isLOP(TOKENS_LINES.get(KEYS.get(0)))){
@@ -1575,6 +1714,7 @@ public class AL extends javax.swing.JFrame {
                 }
 
                 if(numPar >= 1){
+                    showErrorMessage(")",TOKENS_LINES);
                     return false;
                 }else{
                     T = this.LT(termArray);
@@ -1585,6 +1725,7 @@ public class AL extends javax.swing.JFrame {
             
             return T && RE;
         }else{
+            showErrorMessage("Logical Operator (like && or || or ! or < or >...",TOKENS_LINES);
             return false;
         }
     }
@@ -1601,14 +1742,18 @@ public class AL extends javax.swing.JFrame {
             
                 return this.LE(TOKENS_LINES);
             }
-
+            showErrorMessage("At least one TOKEN between parenthesis",TOKENS_LINES);
             return false;
             
         }else{
             if(isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
-                return this.LN(TOKENS_LINES);
+                if(this.LN(TOKENS_LINES)){
+                    return true;
+                }
             }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
-                return this.LID(TOKENS_LINES);
+                if(this.LID(TOKENS_LINES)){
+                    return true;
+                }
             }
             
             return LCONST(TOKENS_LINES);
@@ -1622,12 +1767,20 @@ public class AL extends javax.swing.JFrame {
             
             return true;
         }
-        
+        showErrorMessage("Number",TOKENS_LINES);
         return false;
     }
     
     private boolean LID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        return isIdentifier(TOKENS_LINES.get(KEYS.get(0)));
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            return true;
+        }
+        
+        showErrorMessage("Identifier",TOKENS_LINES);
+        return false;
     }
     
     private boolean LCONST(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
@@ -1638,7 +1791,7 @@ public class AL extends javax.swing.JFrame {
                 return true;
             }
         }
-        
+        showErrorMessage("Logic constant true or false",TOKENS_LINES);
         return false;
     }
     
@@ -1668,6 +1821,7 @@ public class AL extends javax.swing.JFrame {
             }
 
             if(numPar >= 1){
+                showErrorMessage(")",TOKENS_LINES);
                 return false;
             }else{
                 T = this.MT(termArray);
@@ -1683,7 +1837,7 @@ public class AL extends javax.swing.JFrame {
         boolean T = false;
         boolean RE = false;
         
-        if(TOKENS_LINES.isEmpty()){
+        if(TOKENS_LINES.isEmpty() || isSC(TOKENS_LINES.get(KEYS.get(0)))){
             return true;
         }
         else if(TOKENS_LINES.size() >= 2 && isOP(TOKENS_LINES.get(KEYS.get(0)))){
@@ -1712,6 +1866,7 @@ public class AL extends javax.swing.JFrame {
                 }
 
                 if(numPar >= 1){
+                    showErrorMessage(")",TOKENS_LINES);
                     return false;
                 }else{
                     T = this.MT(termArray);
@@ -1722,6 +1877,7 @@ public class AL extends javax.swing.JFrame {
             
             return T && RE;
         }else{
+             showErrorMessage("Mathematic operator or ;",TOKENS_LINES);
             return false;
         }
     }
@@ -1738,26 +1894,48 @@ public class AL extends javax.swing.JFrame {
             
                 return this.ME(TOKENS_LINES);
             }
-
+            showErrorMessage("Tokens between parenthesis",TOKENS_LINES);
             return false;
             
         }else{
             if(isNumber(TOKENS_LINES.get(KEYS.get(0)))){
-                return this.MN(TOKENS_LINES);
+                if(this.MN(TOKENS_LINES)){
+                    return true;
+                }
             }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
-                return this.MID(TOKENS_LINES);
+                if(this.MID(TOKENS_LINES)){
+                    return true;
+                }
             }
-            
+            showErrorMessage("Number or Identifier",TOKENS_LINES);
             return false;
         }
     }
     
     private boolean MN(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        return isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)));
+        if(isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            return true;
+        }
+        showErrorMessage("Number",TOKENS_LINES);
+        return false;
     }
     
     private boolean MID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        return isIdentifier(TOKENS_LINES.get(KEYS.get(0)));
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            return true;
+        }
+        showErrorMessage("Identifier",TOKENS_LINES);
+        return false;
+    }
+    
+    private void addSAMessage(String m){
+        this.SAMessages.setText(this.SAMessages.getText().concat(m));
     }
     
     /**
@@ -1777,7 +1955,7 @@ public class AL extends javax.swing.JFrame {
         analizeBTN = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        SAMessages = new javax.swing.JTextArea();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
 
@@ -1811,11 +1989,11 @@ public class AL extends javax.swing.JFrame {
 
         jLabel1.setText("Código");
 
-        jTextArea1.setColumns(20);
-        jTextArea1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jTextArea1.setRows(5);
-        jScrollPane3.setViewportView(jTextArea1);
-        jTextArea1.setEditable(false);
+        SAMessages.setColumns(20);
+        SAMessages.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        SAMessages.setRows(5);
+        jScrollPane3.setViewportView(SAMessages);
+        SAMessages.setEditable(false);
 
         jLabel2.setText("Tabla Análisis Léxico");
 
@@ -1885,6 +2063,7 @@ public class AL extends javax.swing.JFrame {
         // TODO add your handling code here:
 
         this.input.clear();
+        this.SAMessages.setText("");
 
         String text = this.inputCode.getText();
 
@@ -1906,7 +2085,9 @@ public class AL extends javax.swing.JFrame {
         // AS
         boolean SAR = this.startSyntacticAnalysis();
         
-        System.out.println(SAR);
+        if(SAR){
+            addSAMessage("Compilation Complete Without Errors!.");
+        }
     }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
@@ -1945,6 +2126,7 @@ public class AL extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextArea SAMessages;
     private javax.swing.JScrollPane StatusPanel;
     private javax.swing.JButton analizeBTN;
     private javax.swing.JTextArea inputCode;
@@ -1954,7 +2136,6 @@ public class AL extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTable tokensTable;
     // End of variables declaration//GEN-END:variables
 }
