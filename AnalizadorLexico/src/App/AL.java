@@ -556,6 +556,10 @@ public class AL extends javax.swing.JFrame {
         }
     }
     
+    private boolean isSC(String T){
+        return ";".equals(T);
+    }
+    
     private boolean isNumber(String num){
         for(int i = 0 ; i < num.length() ; i++){
             if(!isNum(num.charAt(i))){
@@ -619,15 +623,31 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean MORE_STATEMENTS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        return false;
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        
+        boolean S = STATEMENT(TOKENS_LINES);
+        boolean MS = MORE_STATEMENTS(TOKENS_LINES);
+        
+        return S && MS;
     }
     
     private boolean DECLARATION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        
         if(isType(TOKENS_LINES.get(KEYS.get(0)))){
-            INIT(TOKENS_LINES);
-        }else{
-            //ID
+            if(!INIT(TOKENS_LINES)){
+                return false;
+            }
+        }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+            if(!ID(TOKENS_LINES)){
+                return false;
+            }
+        }
+        
+        if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            return true;
         }
         
         return false;
@@ -635,18 +655,132 @@ public class AL extends javax.swing.JFrame {
     
     private boolean INIT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
         
+        boolean T = false;
+        boolean ID = false;
+        boolean X = false;
+        
         // CHECK TYPE
         if(isType(TOKENS_LINES.get(KEYS.get(0)))){
-            TOKENS_LINES.remove(KEYS.get(0));
+            T = TYPE(TOKENS_LINES);
         }else{
             return false;
         }
         
         // CHECK ID
         if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
-            TOKENS_LINES.remove(KEYS.get(0));
+            ID = ID(TOKENS_LINES);
         }else{
             return false;
+        }
+        
+        // Check ( par
+        if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            // check parenthesis balance
+            HashMap<ArrayList<Integer>, String> PARAMS_HASHMAP = new HashMap<>();
+            
+            PARAMS_HASHMAP.put(KEYS.get(0), TOKENS_LINES.get(KEYS.get(0)));
+            TOKENS_LINES.remove(KEYS.get(0));
+            
+            int openParNum = 1;
+            int index = 1;
+            while(openParNum > 0 || index < KEYS.size()){
+                if(isClosePar(TOKENS_LINES.get(KEYS.get(index)))){
+                    openParNum--;
+                }
+                else if(isOpenPar(TOKENS_LINES.get(KEYS.get(index)))){
+                    openParNum++;
+                }
+                
+                PARAMS_HASHMAP.put(KEYS.get(index), TOKENS_LINES.get(KEYS.get(index)));
+                TOKENS_LINES.remove(KEYS.get(index));
+                
+                index++;
+            }
+            
+            X = PARAMS(TOKENS_LINES);
+            
+            // Check {
+            if("{".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                // Balance {}
+            }else{
+                return false;
+            }
+        }else{
+            X = INIT_BODY(TOKENS_LINES);
+        }
+        
+        return T && ID && X;
+    }
+    
+    private boolean INIT_BODY(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        boolean T;
+        boolean ID;
+        boolean X;
+        
+        if(TOKENS_LINES.isEmpty()){
+            return true;
+        }
+        
+        if(",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            // CHECK TYPE
+            if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+                T = TYPE(TOKENS_LINES);
+            }else{
+                return false;
+            }
+
+            // CHECK ID
+            if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+                ID = ID(TOKENS_LINES);
+            }else{
+                return false;
+            }
+            
+            // INIT BODY
+            X = INIT_BODY(TOKENS_LINES);
+            
+            return T && ID && X;
+            
+        }else if("=".equals(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            
+            return EXPRESSION(TOKENS_LINES);
+        }else{
+            return true;
+        }
+    }
+    
+    private boolean EXPRESSION(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return false;
+    }
+    
+    private boolean PARAMS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return false;
+    }
+    
+    private boolean BLOCK(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        return false;
+    }
+    
+    private boolean TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    private boolean ID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
+        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+            TOKENS_LINES.remove(KEYS.get(0));
+            KEYS.remove(0);
+            return true;
         }
         
         return false;
