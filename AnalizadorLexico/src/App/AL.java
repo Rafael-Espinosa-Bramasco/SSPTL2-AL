@@ -28,11 +28,13 @@ public class AL extends javax.swing.JFrame {
         this.newToken = new String();
         
         this.isFilled = false;
+        this.isError = false;
     }
     
     // Variables
         // Booleans
         boolean isFilled;
+        boolean isError;
     
         // Strings
         String newToken;
@@ -630,33 +632,36 @@ public class AL extends javax.swing.JFrame {
     }
     
     private void showErrorMessage(String ET,HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        addSAMessage("Token: ");
-        addSAMessage(TOKENS_LINES.get(KEYS.get(0)));
-        addSAMessage(" not expected.\n");
-        String Line = String.valueOf(KEYS.get(0).get(0));
-        String TN = String.valueOf(KEYS.get(0).get(1));
-        addSAMessage("At Line ".concat(Line).concat(", Line Token Number ").concat(TN).concat(".\n"));
-        
-        boolean flag = true;
-        int spaces = 0;
-        for(int i = 0 ; i < LinesOfCode.get(KEYS.get(0).get(0) - 1).size() ; i++){
-            addSAMessage(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)) + ' ');
-            if(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).compareTo(TOKENS_LINES.get(KEYS.get(0)))==0){
-                flag = false;
-                spaces++;
+        if(!this.isError){
+            addSAMessage("Token: ");
+            addSAMessage(TOKENS_LINES.get(KEYS.get(0)));
+            addSAMessage(" not expected.\n");
+            String Line = String.valueOf(KEYS.get(0).get(0));
+            String TN = String.valueOf(KEYS.get(0).get(1));
+            addSAMessage("At Line ".concat(Line).concat(", Line Token Number ").concat(TN).concat(".\n"));
+
+            boolean flag = true;
+            int spaces = 0;
+            for(int i = 0 ; i < LinesOfCode.get(KEYS.get(0).get(0) - 1).size() ; i++){
+                addSAMessage(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)) + ' ');
+                if(((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).compareTo(TOKENS_LINES.get(KEYS.get(0)))==0){
+                    flag = false;
+                    spaces++;
+                }
+                if(flag){
+                    spaces += ((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).length();
+                    spaces++;
+                }
             }
-            if(flag){
-                spaces += ((String) LinesOfCode.get(KEYS.get(0).get(0) - 1).get(i)).length();
-                spaces++;
+            addSAMessage("\n");
+            for(int i = 0 ; i < spaces ; i++){
+                addSAMessage("-");
             }
+            addSAMessage("^\n");
+            addSAMessage("Expected: ".concat(ET).concat(".\n"));
+            addSAMessage("\n");
+            this.isError = true;
         }
-        addSAMessage("\n");
-        for(int i = 0 ; i < spaces ; i++){
-            addSAMessage("-");
-        }
-        addSAMessage("^\n");
-        addSAMessage("Expected: ".concat(ET).concat(".\n"));
-        addSAMessage("\n");
     }
     
     // Funciones de Gramatica
@@ -691,7 +696,7 @@ public class AL extends javax.swing.JFrame {
 
         // check decl or block
         boolean F;
-        if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isBlock(TOKENS_LINES.get(KEYS.get(0)))){
             F = BLOCK(TOKENS_LINES);
         }else{
             F = DECLARATION(TOKENS_LINES);
@@ -722,12 +727,14 @@ public class AL extends javax.swing.JFrame {
         
         boolean x = false;
         
-        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = INIT(TOKENS_LINES))){
+                showErrorMessage("int or float or string or char",TOKENS_LINES);
                 return false;
             }
-        }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+        }else if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = CALL(TOKENS_LINES))){
+                showErrorMessage("Identifier",TOKENS_LINES);
                 return false;
             }
         }
@@ -742,16 +749,18 @@ public class AL extends javax.swing.JFrame {
         }
         
         // Check Type
-        if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             TYPE(TOKENS_LINES);
         }else{
+            showErrorMessage("int or float or string or char",TOKENS_LINES);
             return false;
         }
         
         // Check ID
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             ID(TOKENS_LINES);
         }else{
+            showErrorMessage("Identifier",TOKENS_LINES);
             return false;
         }
         
@@ -766,6 +775,7 @@ public class AL extends javax.swing.JFrame {
                 return INIT_TYPE(TOKENS_LINES);
             }
             default -> {
+                showErrorMessage("= or , or (",TOKENS_LINES);
                 return false;
             }
         }
@@ -783,11 +793,12 @@ public class AL extends javax.swing.JFrame {
                 KEYS.remove(0);
                 
                 if(!EXPRESSION(TOKENS_LINES)){
+                    showErrorMessage("Valir logic or mathematic expression",TOKENS_LINES);
                     return false;
                 }
                 
                 // semicolon
-                if(";".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                if(!TOKENS_LINES.isEmpty() && ";".equals(TOKENS_LINES.get(KEYS.get(0)))){
                     TOKENS_LINES.remove(KEYS.get(0));
                     KEYS.remove(0);
                     
@@ -810,10 +821,10 @@ public class AL extends javax.swing.JFrame {
                 
                 int openPar = 1;
                 int keyIndex = 1;
-                while(openPar > 0 && keyIndex < KEYS.size()){
-                    if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                while(!TOKENS_LINES.isEmpty() && openPar > 0 && keyIndex < KEYS.size()){
+                    if(!TOKENS_LINES.isEmpty() && "(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                         openPar++;
-                    }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                    }else if(!TOKENS_LINES.isEmpty() && ")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                         openPar--;
                     }
                     
@@ -828,7 +839,7 @@ public class AL extends javax.swing.JFrame {
                 }else{
                     if(INIT_PARAMS(INIT_PARAMS_HASH)){
                         
-                        if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                        if(!TOKENS_LINES.isEmpty() && !("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
                             showErrorMessage("{",TOKENS_LINES);
                             return false;
                         }
@@ -841,10 +852,10 @@ public class AL extends javax.swing.JFrame {
                         
                         int openKey = 1;
                         int keyIndex2 = 1;
-                        while(openKey > 0 && keyIndex2 < KEYS.size()){
-                            if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
+                        while(!TOKENS_LINES.isEmpty() && openKey > 0 && keyIndex2 < KEYS.size()){
+                            if(!TOKENS_LINES.isEmpty() && "{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                 openKey++;
-                            }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
+                            }else if(!TOKENS_LINES.isEmpty() && "}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                 openKey--;
                             }
 
@@ -860,11 +871,13 @@ public class AL extends javax.swing.JFrame {
                             return FSTATEMENTS(FSTATEMENTS_HASH);
                         }
                     }else{
+                        showErrorMessage("Valid parameters",TOKENS_LINES);
                         return false;
                     }
                 }
             }
             default -> {
+                showErrorMessage("= or , or (",TOKENS_LINES);
                 return false;
             }
         }
@@ -882,9 +895,11 @@ public class AL extends javax.swing.JFrame {
             if(ID(TOKENS_LINES)){
                 return MORE_PARAMS(TOKENS_LINES);
             }
+            showErrorMessage("Identifier",TOKENS_LINES);
             return false;
         }
         
+        showErrorMessage("int or float or string or char",TOKENS_LINES);
         return false;
     }
     
@@ -893,7 +908,7 @@ public class AL extends javax.swing.JFrame {
             return true;
         }
         
-        if(",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && ",".equals(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
@@ -901,8 +916,10 @@ public class AL extends javax.swing.JFrame {
                 if(ID(TOKENS_LINES)){
                     return MORE_PARAMS(TOKENS_LINES);
                 }
+                showErrorMessage("Identifier",TOKENS_LINES);
                 return false;
             }
+            showErrorMessage("int or float or string or char",TOKENS_LINES);
             return false;
         }
         
@@ -937,7 +954,7 @@ public class AL extends javax.swing.JFrame {
 
         // check decl or block
         boolean F;
-        if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isBlock(TOKENS_LINES.get(KEYS.get(0)))){
             F = BLOCK(TOKENS_LINES);
         }else{
             F = FDECLARATION(TOKENS_LINES);
@@ -954,16 +971,19 @@ public class AL extends javax.swing.JFrame {
         
         boolean x = false;
         
-        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = FINIT(TOKENS_LINES))){
+                showErrorMessage("int or float or string or char",TOKENS_LINES);
                 return false;
             }
-        }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+        }else if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = CALL(TOKENS_LINES))){
+                showErrorMessage("Identifier",TOKENS_LINES);
                 return false;
             }
-        }else if("return".equals(TOKENS_LINES.get(KEYS.get(0)))){
+        }else if(!TOKENS_LINES.isEmpty() && "return".equals(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = RET(TOKENS_LINES))){
+                showErrorMessage("return",TOKENS_LINES);
                 return false;
             }
         }
@@ -978,7 +998,7 @@ public class AL extends javax.swing.JFrame {
         }
         
         // Check Type
-        if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             TYPE(TOKENS_LINES);
         }else{
             showErrorMessage("int or float or string or char",TOKENS_LINES);
@@ -986,7 +1006,7 @@ public class AL extends javax.swing.JFrame {
         }
         
         // Check ID
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             ID(TOKENS_LINES);
         }else{
             showErrorMessage("Identifier",TOKENS_LINES);
@@ -1004,6 +1024,7 @@ public class AL extends javax.swing.JFrame {
                 return FINIT_TYPE(TOKENS_LINES);
             }
             default -> {
+                showErrorMessage("= or , or (",TOKENS_LINES);
                 return false;
             }
         }
@@ -1021,6 +1042,7 @@ public class AL extends javax.swing.JFrame {
                 KEYS.remove(0);
                 
                 if(!EXPRESSION(TOKENS_LINES)){
+                    showErrorMessage("Valid logic or mathematic expression",TOKENS_LINES);
                     return false;
                 }
                 
@@ -1038,19 +1060,20 @@ public class AL extends javax.swing.JFrame {
             case "," -> {
                 return MORE_INITS(TOKENS_LINES);
             }default -> {
+                showErrorMessage(", or =",TOKENS_LINES);
                 return false;
             }
         }
     }
     
     private boolean RET(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if("return".equals(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && "return".equals(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
             boolean x = EXPRESSION(TOKENS_LINES);
             if(x){
-                if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
+                if(!TOKENS_LINES.isEmpty() && isSC(TOKENS_LINES.get(KEYS.get(0)))){
                     TOKENS_LINES.remove(KEYS.get(0));
                     KEYS.remove(0);
                     
@@ -1084,14 +1107,14 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean MORE_INITS(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isSC(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isSC(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
             return true;
         }
         
-        if(",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && ",".equals(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
@@ -1099,8 +1122,10 @@ public class AL extends javax.swing.JFrame {
                 if(ID(TOKENS_LINES)){
                     return MORE_INITS(TOKENS_LINES);
                 }
+                showErrorMessage("Identifier",TOKENS_LINES);
                 return false;
             }
+            showErrorMessage("int or float or string or char",TOKENS_LINES);
             return false;
         }
         showErrorMessage(",",TOKENS_LINES);
@@ -1126,6 +1151,7 @@ public class AL extends javax.swing.JFrame {
                 KEYS.remove(0);
                 
                 if(!EXPRESSION(TOKENS_LINES)){
+                    showErrorMessage("Valid logic or mathematic expression",TOKENS_LINES);
                     return false;
                 }
                 
@@ -1174,9 +1200,11 @@ public class AL extends javax.swing.JFrame {
                             return true;
                         }
                     }
+                    showErrorMessage("Valid parameters for a method call",TOKENS_LINES);
                     return false;
                 }
             }default -> {
+                showErrorMessage("= or (",TOKENS_LINES);
                 return false;
             }
         }
@@ -1196,7 +1224,7 @@ public class AL extends javax.swing.JFrame {
         
         boolean x,y;
         
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
             x = ID(TOKENS_LINES);
         }else{
             x = MN(TOKENS_LINES);
@@ -1214,12 +1242,12 @@ public class AL extends javax.swing.JFrame {
         
         boolean x,y;
         
-        if(!",".equals(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && !",".equals(TOKENS_LINES.get(KEYS.get(0)))){
             showErrorMessage(",",TOKENS_LINES);
             return false;
         }
         
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
             x = ID(TOKENS_LINES);
         }else{
             x = MN(TOKENS_LINES);
@@ -1246,10 +1274,10 @@ public class AL extends javax.swing.JFrame {
 
                         int openPar = 1;
                         int keyIndex = 1;
-                        while(openPar > 0 && keyIndex < KEYS.size()){
-                            if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                        while(!TOKENS_LINES.isEmpty() && openPar > 0 && keyIndex < KEYS.size()){
+                            if(!TOKENS_LINES.isEmpty() && "(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                                 openPar++;
-                            }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                            }else if(!TOKENS_LINES.isEmpty() && ")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                                 openPar--;
                             }
 
@@ -1270,7 +1298,7 @@ public class AL extends javax.swing.JFrame {
                             KEYS.remove(S);
                             
                             if(LE(INIT_PARAMS_HASH)){
-                                if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                                if(!TOKENS_LINES.isEmpty() && !("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
                                     showErrorMessage("}",TOKENS_LINES);
                                     return false;
                                 }
@@ -1283,10 +1311,10 @@ public class AL extends javax.swing.JFrame {
 
                                 int openKey = 1;
                                 int keyIndex2 = 1;
-                                while(openKey > 0 && keyIndex2 < KEYS.size()){
-                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
+                                while(!TOKENS_LINES.isEmpty() && openKey > 0 && keyIndex2 < KEYS.size()){
+                                    if(!TOKENS_LINES.isEmpty() && "{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey++;
-                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
+                                    }else if(!TOKENS_LINES.isEmpty() && "}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey--;
                                     }
 
@@ -1300,7 +1328,7 @@ public class AL extends javax.swing.JFrame {
                                     return false;
                                 }else{
                                     if(BSTATEMENTS(FSTATEMENTS_HASH)){
-                                        if("else".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                                        if(!TOKENS_LINES.isEmpty() && "else".equals(TOKENS_LINES.get(KEYS.get(0)))){
                                             return ELSE(TOKENS_LINES);
                                         }else{
                                             return true;
@@ -1308,6 +1336,7 @@ public class AL extends javax.swing.JFrame {
                                     }
                                 }
                             }
+                            showErrorMessage("Valid logic expression",TOKENS_LINES);
                             return false;
                         }
                     }default -> {
@@ -1331,9 +1360,9 @@ public class AL extends javax.swing.JFrame {
                         int openPar = 1;
                         int keyIndex = 1;
                         while(openPar > 0 && keyIndex < KEYS.size()){
-                            if("(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                            if(!TOKENS_LINES.isEmpty() && "(".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                                 openPar++;
-                            }else if(")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                            }else if(!TOKENS_LINES.isEmpty() && ")".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                                 openPar--;
                             }
 
@@ -1353,7 +1382,7 @@ public class AL extends javax.swing.JFrame {
                             INIT_PARAMS_HASH.remove(KEYS.get(S));
                             KEYS.remove(S);
                             if(LE(INIT_PARAMS_HASH)){
-                                if(!("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
+                                if(!TOKENS_LINES.isEmpty() && !("{".equals(TOKENS_LINES.get(KEYS.get(0))))){
                                     showErrorMessage("{",TOKENS_LINES);
                                     return false;
                                 }
@@ -1366,10 +1395,10 @@ public class AL extends javax.swing.JFrame {
 
                                 int openKey = 1;
                                 int keyIndex2 = 1;
-                                while(openKey > 0 && keyIndex2 < KEYS.size()){
-                                    if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
+                                while(!TOKENS_LINES.isEmpty() && openKey > 0 && keyIndex2 < KEYS.size()){
+                                    if(!TOKENS_LINES.isEmpty() && "{".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey++;
-                                    }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
+                                    }else if(!TOKENS_LINES.isEmpty() && "}".equals(TOKENS_LINES.get(KEYS.get(keyIndex2)))){
                                         openKey--;
                                     }
 
@@ -1415,10 +1444,10 @@ public class AL extends javax.swing.JFrame {
 
                         int openPar = 1;
                         int keyIndex = 1;
-                        while(openPar > 0 && keyIndex < KEYS.size()){
-                            if("{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                        while(!TOKENS_LINES.isEmpty() && openPar > 0 && keyIndex < KEYS.size()){
+                            if(!TOKENS_LINES.isEmpty() && "{".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                                 openPar++;
-                            }else if("}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
+                            }else if(!TOKENS_LINES.isEmpty() && "}".equals(TOKENS_LINES.get(KEYS.get(keyIndex)))){
                                 openPar--;
                             }
 
@@ -1471,7 +1500,7 @@ public class AL extends javax.swing.JFrame {
 
         // check decl or block
         boolean F;
-        if(isBlock(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isBlock(TOKENS_LINES.get(KEYS.get(0)))){
             F = BLOCK(TOKENS_LINES);
         }else{
             F = BDECLARATION(TOKENS_LINES);
@@ -1502,12 +1531,12 @@ public class AL extends javax.swing.JFrame {
         
         boolean x = false;
         
-        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = BINIT(TOKENS_LINES))){
                 showErrorMessage("int or float or string or char",TOKENS_LINES);
                 return false;
             }
-        }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+        }else if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
             if(! (x = CALL(TOKENS_LINES))){
                 showErrorMessage("Identifier",TOKENS_LINES);
                 return false;
@@ -1524,7 +1553,7 @@ public class AL extends javax.swing.JFrame {
         }
         
         // Check Type
-        if(isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             TYPE(TOKENS_LINES);
         }else{
             showErrorMessage("int or float or string or char",TOKENS_LINES);
@@ -1532,7 +1561,7 @@ public class AL extends javax.swing.JFrame {
         }
         
         // Check ID
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0))) && !TOKENS_LINES.isEmpty()){
             ID(TOKENS_LINES);
         }else{
             showErrorMessage("Identifier",TOKENS_LINES);
@@ -1573,7 +1602,7 @@ public class AL extends javax.swing.JFrame {
                 }
                 
                 // semicolon
-                if(";".equals(TOKENS_LINES.get(KEYS.get(0)))){
+                if(!TOKENS_LINES.isEmpty() && ";".equals(TOKENS_LINES.get(KEYS.get(0)))){
                     TOKENS_LINES.remove(KEYS.get(0));
                     KEYS.remove(0);
                     
@@ -1593,7 +1622,7 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean TYPE(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isType(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isType(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             return true;
@@ -1603,7 +1632,7 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean ID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0))) && !isReserved(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             return true;
@@ -1657,10 +1686,10 @@ public class AL extends javax.swing.JFrame {
             int keysIndex = 1;
             TOKENS_LINES.remove(KEYS.get(0));
             termArray.put(KEYS.get(0), "(");
-            while(numPar > 0 && keysIndex < KEYS.size()){
-                if(isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+            while(!TOKENS_LINES.isEmpty() && numPar > 0 && keysIndex < KEYS.size()){
+                if(!TOKENS_LINES.isEmpty() && isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
                     numPar++;
-                }else if(isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                }else if(!TOKENS_LINES.isEmpty() && isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
                     numPar--;
                 }
                 
@@ -1688,24 +1717,24 @@ public class AL extends javax.swing.JFrame {
         if(TOKENS_LINES.isEmpty() || isSC(TOKENS_LINES.get(KEYS.get(0)))){
             return true;
         }
-        else if(TOKENS_LINES.size() >= 2 && isLOP(TOKENS_LINES.get(KEYS.get(0)))){
+        else if(!TOKENS_LINES.isEmpty() && TOKENS_LINES.size() >= 2 && isLOP(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
             if(!TOKENS_LINES.isEmpty() && (isNumber(TOKENS_LINES.get(KEYS.get(0))) || isIdentifier(TOKENS_LINES.get(KEYS.get(0)))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
                 T = this.LT(TOKENS_LINES);
                 RE = this.LRE(TOKENS_LINES);
-            }else if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            }else if(!TOKENS_LINES.isEmpty() && isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
                 HashMap<ArrayList<Integer>, String> termArray = new HashMap<>();
                 
                 int numPar = 1;
                 int keysIndex = 1;
                 TOKENS_LINES.remove(KEYS.get(0));
                 termArray.put(KEYS.get(0), "(");
-                while(numPar > 0 && keysIndex < KEYS.size()){
-                    if(isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                while(!TOKENS_LINES.isEmpty() && numPar > 0 && keysIndex < KEYS.size()){
+                    if(!TOKENS_LINES.isEmpty() && isOpenPar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
                         numPar++;
-                    }else if(isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
+                    }else if(!TOKENS_LINES.isEmpty() && isClosePar(TOKENS_LINES.get(KEYS.get(keysIndex)))){
                         numPar--;
                     }
 
@@ -1731,8 +1760,8 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean LT(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
-            if(TOKENS_LINES.size() >= 3){
+        if(!TOKENS_LINES.isEmpty() && isOpenPar(TOKENS_LINES.get(KEYS.get(0)))){
+            if(!TOKENS_LINES.isEmpty() && TOKENS_LINES.size() >= 3){
                 TOKENS_LINES.remove(KEYS.get(0));
                 KEYS.remove(0);
                 
@@ -1746,11 +1775,11 @@ public class AL extends javax.swing.JFrame {
             return false;
             
         }else{
-            if(isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
+            if(!TOKENS_LINES.isEmpty() && isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
                 if(this.LN(TOKENS_LINES)){
                     return true;
                 }
-            }else if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+            }else if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
                 if(this.LID(TOKENS_LINES)){
                     return true;
                 }
@@ -1761,7 +1790,7 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean LN(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isNumber(TOKENS_LINES.get(KEYS.get(0))) || isFloat(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
@@ -1772,7 +1801,7 @@ public class AL extends javax.swing.JFrame {
     }
     
     private boolean LID(HashMap<ArrayList<Integer>, String> TOKENS_LINES){
-        if(isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
+        if(!TOKENS_LINES.isEmpty() && isIdentifier(TOKENS_LINES.get(KEYS.get(0)))){
             TOKENS_LINES.remove(KEYS.get(0));
             KEYS.remove(0);
             
@@ -2088,6 +2117,8 @@ public class AL extends javax.swing.JFrame {
         if(SAR){
             addSAMessage("Compilation Complete Without Errors!.");
         }
+        
+        this.isError = false;
     }//GEN-LAST:event_analizeBTNActionPerformed
 
     /**
